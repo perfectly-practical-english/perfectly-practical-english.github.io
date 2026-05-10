@@ -17431,12 +17431,6 @@ BLANK
   </div>
 </div>
 
-
-
-
-
-
-
 <script>
 
 (function(){
@@ -18644,7 +18638,7 @@ const resultText = `${filename}|${section.replace(/:+$/, '').trim()}: ${subsecti
 </script>
 
 
-<script>
+<!--<script>
 (function () {
 
   if (document.getElementById("global-green-border")) return;
@@ -18661,6 +18655,49 @@ const resultText = `${filename}|${section.replace(/:+$/, '').trim()}: ${subsecti
   });
 
   document.documentElement.appendChild(border);
+
+})();
+</script>-->
+
+<script>
+(function () {
+
+  if (document.getElementById("global-green-border")) return;
+
+  const border = document.createElement("div");
+  border.id = "global-green-border";
+
+  Object.assign(border.style, {
+    position: "fixed",
+    inset: "0",
+    pointerEvents: "none",
+    zIndex: "2147483647",
+    boxShadow: "inset 0 0 0 10px #39FF14",
+    willChange: "transform",
+    transition: "transform 0.12s ease-out"
+  });
+
+  document.documentElement.appendChild(border);
+
+  function adjustForKeyboard() {
+    const vv = window.visualViewport;
+    if (!vv) return;
+
+    const keyboardOffset =
+      window.innerHeight - vv.height - vv.offsetTop;
+
+    border.style.transform =
+      `translateY(-${Math.max(0, keyboardOffset)}px)`;
+  }
+
+  const vv = window.visualViewport;
+
+  if (vv) {
+    vv.addEventListener("resize", adjustForKeyboard);
+    vv.addEventListener("scroll", adjustForKeyboard);
+  }
+
+  adjustForKeyboard();
 
 })();
 </script>
@@ -19297,7 +19334,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const currentGap = copyTop - lastBottom;
     const adjust = currentGap - desiredGap;
 
-    copyright.style.marginTop = (-adjust) + "px";
+    copyright.style.marginTop = (-adjust - 5) + "px";
   }
 
   function update(){
@@ -19624,7 +19661,7 @@ document.addEventListener("DOMContentLoaded", () => {
 </script>
 
 
-<script>
+<!--<script>
 (function(){
 
 const RAW_TEXT = `
@@ -19673,27 +19710,34 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     modal.innerHTML = `
-      <div style="
-        max-width:700px;
-        margin:0 auto;
-        background:#fff;
-        padding:20px;
-        border-radius:10px;
-        position:relative;
-        max-height:80vh;
-        overflow:auto;
-        font-family:inherit;
-      ">
-        <button id="close-instructions-modal" class="modal-close-btn">✕</button>
-          position:absolute;
-          top:10px;
-          right:10px;
-          cursor:pointer;
-        ">✕</button>
+  <div style="
+    max-width:700px;
+    margin:0 auto;
+    background:#fff;
+    padding:20px;
+    border-radius:10px;
+    position:relative;
+    max-height:80vh;
+    overflow:auto;
+    font-family:inherit;
+  ">
 
-        <pre style="white-space:pre-wrap;margin:0;">${RAW_TEXT}</pre>
-      </div>
-    `;
+    <button
+      id="close-instructions-modal"
+      style="
+        position:absolute;
+        top:10px;
+        right:10px;
+        cursor:pointer;
+        border:none;
+        background:none;
+        font-size:18px;
+      "
+    >✕</button>
+
+    <pre style="white-space:pre-wrap;margin:0;">${RAW_TEXT}</pre>
+  </div>
+`;
 
     document.body.appendChild(modal);
 
@@ -19709,7 +19753,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 })();
-</script>
+</script>-->
 <script>
 (function(){
 
@@ -20339,8 +20383,10 @@ document.addEventListener("click", (e) => {
     if (loader) loader.remove();
   }
 
+  // Run immediately (prevents stuck loader)
   showPage();
 
+  // Backup safety
   document.addEventListener("DOMContentLoaded", showPage);
   window.addEventListener("load", showPage);
   setTimeout(showPage, 1500);
@@ -20348,86 +20394,165 @@ document.addEventListener("click", (e) => {
 })();
 </script>
 
-<style>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
 
-/* =========================
-   FOOTER STRUCTURE (FIXED)
-========================= */
+  const targets = [
+    { parent:"#layout", content:"#layout", gap:-30 },
+    { parent:"#tocContainer", content:"#tocContainer", gap:-20 },
+    { parent:"#quizModal", content:"#quizModalContent", gap:-30 }
+  ];
 
-.copyrightSection {
-  display: block;
-  width: 100%;
+  const copyrightHTML = `
+    <section class="copyrightSection">
 
-  margin: 0;
-  padding: 6px 10px;
+      <!-- 10px invisible space ABOVE copyright -->
+      <div class="spacer spacer-top"></div>
 
-  font-size: 9px;
-  line-height: 1.3;
-  opacity: 0.75;
+      <div class="footer-note copyright">
+        © <span class="auto-year"></span> Perfectly Practical English™. All rights reserved.
+      </div>
 
-  box-sizing: border-box;
+      <div id="visitor-count" class="visitor-count">
+        Visits: loading...
+      </div>
 
-  position: relative;
+      <!-- 30px invisible space BELOW visits -->
+      <div class="spacer spacer-bottom"></div>
+
+
+    </section>
+  `;
+
+  function insertCopyright(parent){
+    if (!parent.querySelector(":scope > .copyrightSection")) {
+      parent.insertAdjacentHTML("beforeend", copyrightHTML);
+    }
+  }
+
+  function adjust(parent, content, desiredGap){
+
+    const copyright = parent.querySelector(".copyrightSection");
+    const last = content.lastElementChild;
+
+    if (!copyright || !last) return;
+
+    const lastBottom = last.getBoundingClientRect().bottom;
+    const copyTop = copyright.getBoundingClientRect().top;
+
+    const currentGap = copyTop - lastBottom;
+    const adjust = currentGap - desiredGap;
+
+    const extraOffset = 5; // try 5–10px
+
+copyright.style.marginTop = (-adjust + extraOffset) + "px";
+  }
+
+  async function updateVisitorCount() {
+
+    const namespace = "PerfectlyPracticalEnglish";
+    const key = "homepage";
+
+    const isOwner =
+      localStorage.getItem("isOwner") === "true";
+
+    const isLocal =
+      location.hostname === "localhost" ||
+      location.hostname === "127.0.0.1";
+
+    const alreadyCounted =
+      sessionStorage.getItem("counted");
+
+    let data;
+
+    try {
+
+      if (!isOwner && !isLocal && !alreadyCounted) {
+
+        data = await fetch(
+          `https://api.countapi.xyz/hit/${namespace}/${key}`
+        ).then(r => r.json());
+
+        sessionStorage.setItem("counted", "true");
+
+      } else {
+
+        data = await fetch(
+          `https://api.countapi.xyz/get/${namespace}/${key}`
+        ).then(r => r.json());
+
+      }
+
+      document.querySelectorAll("#visitor-count").forEach(el => {
+        el.textContent = `Total: ${data.value} visits`;
+      });
+
+    } catch (err) {
+
+      console.error("Visitor counter failed:", err);
+
+      document.querySelectorAll("#visitor-count").forEach(el => {
+        el.textContent = "Visits unavailable";
+      });
+
+    }
+
+  }
+
+  function update(){
+
+    targets.forEach(t => {
+
+      const parent = document.querySelector(t.parent);
+      const content = document.querySelector(t.content);
+
+      if (!parent || !content) return;
+
+      insertCopyright(parent);
+      adjust(parent, content, t.gap);
+
+    });
+
+  }
+
+  // Set current year
+  document.querySelectorAll(".auto-year").forEach(el => {
+    el.textContent = new Date().getFullYear();
+  });
+
+  update();
+  updateVisitorCount();
+
+  window.addEventListener("resize", update);
+
+});
+</script>
+
+<script>
+function fixModalScrollRoom() {
+  const vv = window.visualViewport;
+  if (!vv) return;
+
+  const keyboardHeight =
+    window.innerHeight - vv.height - vv.offsetTop;
+
+  const modal = document.getElementById("quizModal");
+  if (!modal) return;
+
+  modal.style.height =
+    `calc(100dvh - ${keyboardHeight}px)`;
 }
 
-/* stacked lines */
-.copyright-line,
-.visitor-line {
-  display: block;
-}
+window.visualViewport?.addEventListener("resize", fixModalScrollRoom);
+window.visualViewport?.addEventListener("scroll", fixModalScrollRoom);
+window.addEventListener("resize", fixModalScrollRoom);
 
-/* visits sits BELOW copyright */
-.visitor-line {
-  margin-top: 4px;
-}
+fixModalScrollRoom();
 
-/* =========================
-   🔥 FIX: REMOVE FOOTER PUSH DOWN ISSUE
-========================= */
-
-/* kill artificial scroll buffer that pushes layout down */
-body::after {
-  content: "";
-  display: block;
-  height: 80px; /* reduced + controlled (not excessive) */
-}
-
-/* =========================
-   REMOVE SPACING THAT PUSHES FOOTER DOWN
-========================= */
-
-/* prevent last elements from creating phantom space */
-#layout > :last-child,
-#tocContainer > :last-child,
-#quizModalContent > :last-child {
-  margin-bottom: 0 !important;
-  padding-bottom: 0 !important;
-}
-
-/* neutralize container spacing inflation */
-#layout,
-#tocContainer,
-#quizModalContent {
-  gap: 0 !important;
-}
-
-/* =========================
-   FLOATING CONTROL SAFETY
-========================= */
-
-#chapterVerseControls,
-#readaloudControls {
-  position: sticky;
-  bottom: 0;
-  z-index: 50;
-  background: #fff;
-}
-
-</style>
+</script>
 
 </body>
 </html>
-
 
 
 
