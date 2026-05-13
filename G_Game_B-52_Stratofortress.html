@@ -2083,11 +2083,15 @@ window.addEventListener("resize", adjustBodyPadding);
 <script>
 (function () {
 
+  /* =========================================
+     SUPABASE CONFIG
+     ========================================= */
+
   const SUPABASE_URL =
     "https://etwwriloppklhhkmswpr.supabase.co";
 
   const SUPABASE_KEY =
-    "YOUR_KEY";
+    "PASTE_YOUR_REAL_ANON_KEY_HERE";
 
   const supabase =
     window.supabase.createClient(
@@ -2153,6 +2157,10 @@ window.addEventListener("resize", adjustBodyPadding);
       created_at:
         new Date().toISOString()
     };
+
+    /*
+      LEFT → RIGHT FILL
+    */
 
     for (let i = 0; i < MAX_COLS; i++) {
 
@@ -2220,15 +2228,108 @@ window.addEventListener("resize", adjustBodyPadding);
     }
   }
 
-  /*
-    GLOBAL ACCESS
-  */
+  /* =========================================
+     AUTO HUNTER
+     ========================================= */
+
+  function huntForScoreboardPipe() {
+
+    const targets = [
+
+      "#scoreboard",
+      "#scoreOutput",
+      ".scoreboard",
+      ".results",
+      ".finalScore",
+      "body"
+
+    ];
+
+    for (const selector of targets) {
+
+      const el =
+        document.querySelector(selector);
+
+      if (!el) {
+        continue;
+      }
+
+      const text =
+        el.innerText ||
+        el.textContent ||
+        "";
+
+      const lines = text
+        .split("\n")
+        .map(v => v.trim())
+        .filter(Boolean);
+
+      for (const line of lines) {
+
+        if (
+          isScoreboardPipeString(line)
+        ) {
+
+          console.log(
+            "🎯 SCOREBOARD PIPE FOUND:",
+            line
+          );
+
+          PIPE(line);
+
+          return;
+        }
+      }
+    }
+
+    console.warn(
+      "No scoreboard pipe found"
+    );
+  }
+
+  /* =========================================
+     AUTO HOOK
+     ========================================= */
+
+  document.addEventListener(
+    "DOMContentLoaded",
+    () => {
+
+      const btn =
+        document.getElementById(
+          "submitBtn"
+        );
+
+      if (!btn) {
+
+        console.warn(
+          "submitBtn not found"
+        );
+
+        return;
+      }
+
+      btn.addEventListener(
+        "click",
+        () => {
+
+          setTimeout(
+            huntForScoreboardPipe,
+            500
+          );
+        }
+      );
+
+      console.log(
+        "✅ SCOREBOARD PIPE HUNTER ACTIVE"
+      );
+    }
+  );
 
   window.PIPE = PIPE;
 
 })();
-</script>
-</body>
+</script></body>
 </html>
 
 
