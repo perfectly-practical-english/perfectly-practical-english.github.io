@@ -2111,83 +2111,49 @@ window.addEventListener("resize", adjustBodyPadding);
 })();
 </script>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <script>
+/* ===============================
+   SUPABASE CONFIG
+=============================== */
 const SUPABASE_URL = "https://etwwriloppklhhkmswpr.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV0d3dyaWxvcHBrbGhoa21zd3ByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NDM3NTcsImV4cCI6MjA5NDExOTc1N30.rmquTqYW6WqS7jZUbHM_gWecka3jkiWzYb14eJ10hpQ";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV0d3dyaWxvcHBrbGhoa21zd3ByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NDM3NTcsImV4cCI6MjA5NDExOTc1N30.rmquTqYW6WqS7jZUbHM_gWecka3jkiWzYb14eJ10hpQ"; // <-- replace if needed
 
-let client = null;
-
-/* HARD INIT (wait until library exists) */
-function boot() {
-  if (!window.supabase) {
-    console.error("Supabase library not loaded");
-    return;
-  }
-
-  client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  window.supabaseClient = client;
-
-  console.log("Supabase ready");
-}
-
-window.addEventListener("load", boot);
-
-
-/* =========================================
-   FORCE PIPE (this is your bridge)
-   ========================================= */
-
-window.PIPE = async function (scoreboardData) {
-
+/* ===============================
+   SEND SCORE FUNCTION
+=============================== */
+async function sendScoreToSupabase(scoreLine) {
   try {
-    if (!window.supabaseClient) {
-      console.error("Supabase not ready yet");
-      return;
+
+    const response = await fetch(
+      `${SUPABASE_URL}/rest/v1/pipe_ingest`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": SUPABASE_ANON_KEY,
+          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+          "Prefer": "return=minimal"
+        },
+        body: JSON.stringify({
+          raw_line: scoreLine
+        })
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Supabase insert failed:", errorText);
+      return false;
     }
 
-    if (!scoreboardData) {
-      console.error("No data received from scoreboard");
-      return;
-    }
+    console.log("✅ Score sent to Supabase");
+    return true;
 
-    // FORCE everything into a string + split
-    const raw = String(scoreboardData);
-    const parts = raw.split("|");
-
-    const row = {
-      c1: parts[0] || null,
-      c2: parts[1] || null,
-      c3: parts[2] || null,
-      c4: parts[3] || null,
-      c5: parts[4] || null,
-      c6: parts[5] || null,
-      c7: parts[6] || null,
-      c8: parts[7] || null,
-      c9: parts[8] || null,
-      c10: parts[9] || null,
-
-      field_count: parts.length,
-      source_page: location.pathname,
-      created_at: new Date().toISOString()
-    };
-
-    const { error } = await window.supabaseClient
-      .from("raw_pipe_ingest")
-      .insert([row]);
-
-    if (error) {
-      console.error("SUPABASE INSERT FAILED:", error);
-      return;
-    }
-
-    console.log("INSERT SUCCESS:", row);
-
-  } catch (e) {
-    console.error("PIPE CRASH:", e);
+  } catch (err) {
+    console.error("❌ Network error sending score:", err);
+    return false;
   }
-};
+}
 </script>
 
 </body>
