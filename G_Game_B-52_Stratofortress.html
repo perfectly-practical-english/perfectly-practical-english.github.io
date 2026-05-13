@@ -2090,8 +2090,13 @@ window.addEventListener("resize", adjustBodyPadding);
   const SUPABASE_URL =
     "https://etwwriloppklhhkmswpr.supabase.co";
 
+  /*
+    IMPORTANT:
+    USE YOUR REAL SUPABASE ANON KEY
+  */
+
   const SUPABASE_KEY =
-    "PASTE_YOUR_REAL_ANON_KEY_HERE";
+    "PASTE_REAL_ANON_KEY_HERE";
 
   const supabase =
     window.supabase.createClient(
@@ -2099,41 +2104,132 @@ window.addEventListener("resize", adjustBodyPadding);
       SUPABASE_KEY
     );
 
+  /* =========================================
+     CONFIG
+     ========================================= */
+
+  const TABLE_NAME = "raw_pipe_ingest";
+
   const MAX_COLS = 10;
 
+  /*
+    Prevent duplicate exports
+  */
+
+  let lastExportedPipe = null;
+
   /* =========================================
-     VALIDATOR
+     SAFE LOG
+     ========================================= */
+
+  function log() {
+
+    console.log(
+      "[PIPE]",
+      ...arguments
+    );
+  }
+
+  function warn() {
+
+    console.warn(
+      "[PIPE]",
+      ...arguments
+    );
+  }
+
+  function error() {
+
+    console.error(
+      "[PIPE]",
+      ...arguments
+    );
+  }
+
+  /* =========================================
+     SCOREBOARD PIPE DETECTOR
      ========================================= */
 
   function isScoreboardPipeString(str) {
 
-    if (!str || typeof str !== "string") {
-      return false;
-    }
+    try {
 
-    if (!str.includes("|")) {
-      return false;
-    }
+      if (!str) {
+        return false;
+      }
 
-    const parts = str
-      .split("|")
-      .map(v => v.trim());
+      if (typeof str !== "string") {
+        return false;
+      }
 
-    if (parts.length < 5) {
-      return false;
-    }
+      if (!str.includes("|")) {
+        return false;
+      }
 
-    const hasScore =
-      parts.some(v =>
-        /^\d+\/\d+$/.test(v)
+      /*
+        Ignore absurdly large text blocks
+      */
+
+      if (str.length > 300) {
+        return false;
+      }
+
+      const parts = str
+        .split("|")
+        .map(v => String(v).trim());
+
+      /*
+        Require structure
+      */
+
+      if (parts.length < 5) {
+        return false;
+      }
+
+      /*
+        Require score
+      */
+
+      const hasFraction =
+        parts.some(v =>
+          /^\d+\s*\/\s*\d+$/.test(v)
+        );
+
+      const hasPercent =
+        parts.some(v =>
+          /^\d+(\.\d+)?%$/.test(v)
+        );
+
+      if (!hasFraction) {
+        return false;
+      }
+
+      if (!hasPercent) {
+        return false;
+      }
+
+      /*
+        Exclude giant raw text fields
+      */
+
+      const hasHugeField =
+        parts.some(v => v.length > 120);
+
+      if (hasHugeField) {
+        return false;
+      }
+
+      return true;
+
+    } catch (err) {
+
+      error(
+        "VALIDATOR CRASH:",
+        err
       );
 
-    const hasPercent =
-      parts.some(v =>
-        /^\d+(\.\d+)?%$/.test(v)
-      );
-
-    return hasScore && hasPercent;
+      return false;
+    }
   }
 
   /* =========================================
@@ -2144,7 +2240,7 @@ window.addEventListener("resize", adjustBodyPadding);
 
     const parts = pipeString
       .split("|")
-      .map(v => v.trim());
+      .map(v => String(v).trim());
 
     const row = {
 
@@ -2152,17 +2248,22 @@ window.addEventListener("resize", adjustBodyPadding);
 
       field_count: parts.length,
 
-      source_page: location.pathname,
+      source_page:
+        location.pathname,
 
       created_at:
         new Date().toISOString()
     };
 
     /*
-      LEFT → RIGHT FILL
+      STRICT LEFT → RIGHT FILL
     */
 
-    for (let i = 0; i < MAX_COLS; i++) {
+    for (
+      let i = 0;
+      i < MAX_COLS;
+      i++
+    ) {
 
       row["c" + (i + 1)] =
 
@@ -2183,108 +2284,237 @@ window.addEventListener("resize", adjustBodyPadding);
 
   async function PIPE(pipeString) {
 
-    console.log(
-      "RAW PIPE INPUT:",
-      pipeString
-    );
+    try {
 
-    if (
-      !isScoreboardPipeString(pipeString)
-    ) {
-
-      console.warn(
-        "Rejected pipe string"
+      log(
+        "RAW INPUT:",
+        pipeString
       );
 
-      return;
-    }
+      /*
+        Prevent duplicates
+      */
 
-    const row =
-      buildRow(pipeString);
+      if (
+        pipeString ===
+        lastExportedPipe
+      ) {
 
-    console.log(
-      "FINAL ROW:",
-      row
-    );
+        warn(
+          "Duplicate blocked"
+        );
 
-    const { data, error } =
-      await supabase
-        .from("raw_pipe_ingest")
-        .insert([row]);
+        return;
+      }
 
-    if (error) {
+      /*
+        Validate
+      */
 
-      console.error(
-        "❌ SUPABASE ERROR:",
-        error
+      if (
+        !isScoreboardPipeString(
+          pipeString
+        )
+      ) {
+
+        warn(
+          "Rejected non-scoreboard string"
+        );
+
+        return;
+      }
+
+      /*
+        Build row
+      */
+
+      const row =
+        buildRow(pipeString);
+
+      log(
+        "FINAL ROW:",
+        row
       );
 
-    } else {
+      /*
+        INSERT
+      */
 
-      console.log(
-        "✅ INSERT SUCCESS",
-        data
+      const response =
+        await supabase
+          .from(TABLE_NAME)
+          .insert([row])
+          .select();
+
+      /*
+        FULL DEBUG
+      */
+
+      log(
+        "SUPABASE RESPONSE:",
+        response
+      );
+
+      if (response.error) {
+
+        error(
+          "INSERT FAILED:",
+          response.error
+        );
+
+        return;
+      }
+
+      /*
+        Success
+      */
+
+      lastExportedPipe =
+        pipeString;
+
+      log(
+        "✅ INSERT SUCCESS"
+      );
+
+    } catch (err) {
+
+      error(
+        "PIPE CRASH:",
+        err
       );
     }
   }
 
   /* =========================================
-     AUTO HUNTER
+     PIPE HUNTER
      ========================================= */
 
   function huntForScoreboardPipe() {
 
-    const targets = [
+    try {
 
-      "#scoreboard",
-      "#scoreOutput",
-      ".scoreboard",
-      ".results",
-      ".finalScore",
-      "body"
+      log(
+        "HUNT STARTED"
+      );
 
-    ];
+      const targets = [
 
-    for (const selector of targets) {
+        "#scoreboard",
+        "#scoreOutput",
+        "#results",
+        "#result",
 
-      const el =
-        document.querySelector(selector);
+        ".scoreboard",
+        ".results",
+        ".result",
+        ".finalScore",
 
-      if (!el) {
-        continue;
-      }
+        "[data-scoreboard]",
 
-      const text =
-        el.innerText ||
-        el.textContent ||
-        "";
+        "body"
 
-      const lines = text
-        .split("\n")
-        .map(v => v.trim())
-        .filter(Boolean);
+      ];
 
-      for (const line of lines) {
+      for (
+        const selector of targets
+      ) {
 
-        if (
-          isScoreboardPipeString(line)
-        ) {
-
-          console.log(
-            "🎯 SCOREBOARD PIPE FOUND:",
-            line
+        const elements =
+          document.querySelectorAll(
+            selector
           );
 
-          PIPE(line);
+        if (!elements.length) {
+          continue;
+        }
 
-          return;
+        for (const el of elements) {
+
+          const text =
+
+            el.innerText ||
+
+            el.textContent ||
+
+            "";
+
+          if (!text) {
+            continue;
+          }
+
+          /*
+            Search line-by-line
+          */
+
+          const lines = text
+            .split("\n")
+            .map(v => v.trim())
+            .filter(Boolean);
+
+          for (const line of lines) {
+
+            if (
+              isScoreboardPipeString(
+                line
+              )
+            ) {
+
+              log(
+                "🎯 SCOREBOARD FOUND:",
+                line
+              );
+
+              PIPE(line);
+
+              return;
+            }
+          }
+
+          /*
+            Fallback:
+            search entire block
+          */
+
+          const possible =
+            text.match(
+              /[^\n]{0,250}\|[^\n]{0,250}/g
+            ) || [];
+
+          for (const item of possible) {
+
+            const cleaned =
+              item.trim();
+
+            if (
+              isScoreboardPipeString(
+                cleaned
+              )
+            ) {
+
+              log(
+                "🎯 FALLBACK FOUND:",
+                cleaned
+              );
+
+              PIPE(cleaned);
+
+              return;
+            }
+          }
         }
       }
-    }
 
-    console.warn(
-      "No scoreboard pipe found"
-    );
+      warn(
+        "No scoreboard pipe found"
+      );
+
+    } catch (err) {
+
+      error(
+        "HUNTER CRASH:",
+        err
+      );
+    }
   }
 
   /* =========================================
@@ -2295,41 +2525,101 @@ window.addEventListener("resize", adjustBodyPadding);
     "DOMContentLoaded",
     () => {
 
-      const btn =
-        document.getElementById(
-          "submitBtn"
-        );
-
-      if (!btn) {
-
-        console.warn(
-          "submitBtn not found"
-        );
-
-        return;
-      }
-
-      btn.addEventListener(
-        "click",
-        () => {
-
-          setTimeout(
-            huntForScoreboardPipe,
-            500
-          );
-        }
+      log(
+        "✅ PIPE HUNTER ACTIVE"
       );
 
-      console.log(
-        "✅ SCOREBOARD PIPE HUNTER ACTIVE"
+      /*
+        Try multiple button names
+      */
+
+      const possibleButtons = [
+
+        "#submitBtn",
+        "#finishBtn",
+        "#doneBtn",
+        "#resultsBtn",
+
+        ".submitBtn",
+        ".finishBtn",
+
+        "button"
+
+      ];
+
+      let hooked = false;
+
+      for (
+        const selector of possibleButtons
+      ) {
+
+        const buttons =
+          document.querySelectorAll(
+            selector
+          );
+
+        if (!buttons.length) {
+          continue;
+        }
+
+        for (const btn of buttons) {
+
+          btn.addEventListener(
+            "click",
+            () => {
+
+              log(
+                "BUTTON CLICK DETECTED"
+              );
+
+              /*
+                Wait for scoreboard render
+              */
+
+              setTimeout(
+                huntForScoreboardPipe,
+                800
+              );
+            }
+          );
+
+          hooked = true;
+        }
+      }
+
+      if (!hooked) {
+
+        warn(
+          "No buttons hooked"
+        );
+      }
+
+      /*
+        Emergency fallback:
+        automatic delayed hunt
+      */
+
+      setTimeout(
+        huntForScoreboardPipe,
+        3000
       );
     }
   );
 
+  /* =========================================
+     GLOBAL ACCESS
+     ========================================= */
+
   window.PIPE = PIPE;
 
+  window.huntForScoreboardPipe =
+    huntForScoreboardPipe;
+
 })();
-</script></body>
+</script>
+
+
+</body>
 </html>
 
 
