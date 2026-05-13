@@ -2114,250 +2114,65 @@ window.addEventListener("resize", adjustBodyPadding);
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-(function () {
-
-  if (!window.supabase) {
-    console.error("[PIPE] Supabase library failed to load.");
-    return;
-  }
-
-  const SUPABASE_URL =
-    "https://etwwriloppklhhkmswpr.supabase.co";
-
-  const SUPABASE_KEY =
-    "YOUR_KEY_HERE";
-
-  let supabase = null;
+async function PIPE(pipeString) {
 
   try {
-    supabase = window.supabase.createClient(
-      SUPABASE_URL,
-      SUPABASE_KEY
+
+    if (!window.supabase) {
+      console.warn("[PIPE] Supabase not ready");
+      return;
+    }
+
+    if (!pipeString || typeof pipeString !== "string") {
+      console.warn("[PIPE] Invalid input");
+      return;
+    }
+
+    console.log("[PIPE INPUT]", pipeString);
+
+    const parts = pipeString.split("|").map(v => (v || "").trim());
+
+    const safeParts = Array.from({ length: 10 }, (_, i) =>
+      parts[i] ?? null
     );
-  } catch (err) {
-    console.error("[PIPE] Supabase init failed:", err);
-  }
-
-  const TABLE_NAME = "raw_pipe_ingest";
-  const MAX_COLS = 10;
-
-  let lastExportedPipe = null;
-
-  const log = (...a) => console.log("[PIPE]", ...a);
-  const warn = (...a) => console.warn("[PIPE]", ...a);
-  const error = (...a) => console.error("[PIPE]", ...a);
-
-  /* =========================================
-     SAFE HELPERS
-     ========================================= */
-
-  const safeString = (v) =>
-    v === undefined || v === null ? null : String(v);
-
-  const safeTrim = (v) => {
-    const s = safeString(v);
-    return s ? s.trim() : null;
-  };
-
-  const isoNow = () => new Date().toISOString();
-
-  /* =========================================
-     VALIDATION
-     ========================================= */
-
-  function isScoreboardPipeString(str) {
-    if (!str || typeof str !== "string") return false;
-    if (!str.includes("|")) return false;
-    if (str.length > 300) return false;
-
-    const parts = str.split("|").map(v => v.trim());
-    if (parts.length < 5) return false;
-
-    const hasFraction = parts.some(v =>
-      /^\d+\s*\/\s*\d+$/.test(v)
-    );
-
-    const hasPercent = parts.some(v =>
-      /^\d+(\.\d+)?%$/.test(v)
-    );
-
-    return hasFraction && hasPercent;
-  }
-
-  /* =========================================
-     ROW BUILDER (STRICT FIX)
-     ========================================= */
-
-  function buildRow(pipeString) {
-
-    const parts = pipeString.split("|").map(v => v.trim());
 
     const row = {
-      raw_string: safeString(pipeString) || "",
+      raw_string: pipeString,
       field_count: parts.length,
       source_page: location.pathname || "unknown",
-      created_at: isoNow()
+      created_at: new Date().toISOString(),
+
+      c1: safeParts[0],
+      c2: safeParts[1],
+      c3: safeParts[2],
+      c4: safeParts[3],
+      c5: safeParts[4],
+      c6: safeParts[5],
+      c7: safeParts[6],
+      c8: safeParts[7],
+      c9: safeParts[8],
+      c10: safeParts[9],
     };
 
-    // FORCE EXACT COLUMN SHAPE
-    for (let i = 0; i < MAX_COLS; i++) {
-      row[`c${i + 1}`] = safeTrim(parts[i]) || null;
+    console.log("[PIPE ROW]", row);
+
+    const { data, error } = await window.supabase
+      .from("raw_pipe_ingest")
+      .insert([row])
+      .select();
+
+    if (error) {
+      console.error("[PIPE SUPABASE ERROR]", error);
+      return;
     }
 
-    return row;
+    console.log("[PIPE SUCCESS]", data);
+
+  } catch (err) {
+    console.error("[PIPE CRASH]", err);
   }
-
-  /* =========================================
-     SUPABASE SAFETY CLEANER
-     ========================================= */
-
-  function sanitize(row) {
-    const clean = {};
-
-    for (const [k, v] of Object.entries(row)) {
-      if (v !== undefined) clean[k] = v;
-    }
-
-    return clean;
-  }
-
-  /* =========================================
-     PIPE INSERT
-     ========================================= */
-
-  async function PIPE(pipeString) {
-
-    try {
-
-      if (!supabase) return warn("Supabase not ready");
-      if (typeof pipeString !== "string") return warn("Invalid input");
-
-      if (pipeString === lastExportedPipe) {
-        return warn("Duplicate blocked");
-      }
-
-      if (!isScoreboardPipeString(pipeString)) {
-        return warn("Rejected:", pipeString);
-      }
-
-      const row = sanitize(buildRow(pipeString));
-
-      log("INSERT ROW:", row);
-
-      const { data, error: err } = await supabase
-        .from(TABLE_NAME)
-        .insert([row])
-        .select();
-
-      if (err) {
-        error("❌ SUPABASE ERROR:");
-        console.error(err);
-        return;
-      }
-
-      log("✅ SUCCESS:", data);
-
-      lastExportedPipe = pipeString;
-
-    } catch (err) {
-      error("PIPE CRASH:", err);
-    }
-  }
-
-  /* =========================================
-     HUNTER
-     ========================================= */
-
-  function huntForScoreboardPipe() {
-
-    try {
-
-      log("HUNT STARTED");
-
-      const targets = [
-        "#scoreboardContainer",
-        "#scoreboard",
-        "#scoreOutput",
-        "#results",
-        "#result",
-        ".scoreboard",
-        ".results",
-        ".result",
-        ".finalScore",
-        "[data-scoreboard]",
-        "body"
-      ];
-
-      for (const selector of targets) {
-
-        const elements = document.querySelectorAll(selector);
-        if (!elements.length) continue;
-
-        for (const el of elements) {
-
-          const text = el.innerText || el.textContent || "";
-          if (!text) continue;
-
-          const lines = text.split("\n").map(v => v.trim());
-
-          for (const line of lines) {
-            if (isScoreboardPipeString(line)) {
-              log("🎯 FOUND:", line);
-              PIPE(line);
-              return;
-            }
-          }
-
-          const fallback =
-            text.match(/[^\n]{0,250}\|[^\n]{0,250}/g) || [];
-
-          for (const item of fallback) {
-            const cleaned = item.trim();
-
-            if (isScoreboardPipeString(cleaned)) {
-              log("🎯 FALLBACK:", cleaned);
-              PIPE(cleaned);
-              return;
-            }
-          }
-        }
-      }
-
-      warn("No scoreboard pipe found");
-
-    } catch (err) {
-      error("HUNTER CRASH:", err);
-    }
-  }
-
-  /* =========================================
-     AUTO HOOK
-     ========================================= */
-
-  document.addEventListener("DOMContentLoaded", () => {
-
-    log("✅ PIPE SYSTEM ACTIVE");
-
-    const buttons = document.querySelectorAll(
-      "#submitBtn, #finishBtn, #doneBtn, #resultsBtn, button"
-    );
-
-    buttons.forEach(btn => {
-      btn.addEventListener("click", () => {
-        log("CLICK DETECTED");
-        setTimeout(huntForScoreboardPipe, 800);
-      });
-    });
-
-    setTimeout(huntForScoreboardPipe, 3000);
-  });
-
-  window.PIPE = PIPE;
-  window.huntForScoreboardPipe = huntForScoreboardPipe;
-
-})();
+}
 </script>
-
 
 </body>
 </html>
