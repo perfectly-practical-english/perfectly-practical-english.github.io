@@ -2083,9 +2083,9 @@ window.addEventListener("resize", adjustBodyPadding);
 <script>
 (function () {
 
-  /* =========================
-     SUPABASE CONFIG
-     ========================= */
+  /* =========================================
+     SUPABASE
+     ========================================= */
 
   const SUPABASE_URL =
     "https://etwwriloppklhhkmswpr.supabase.co";
@@ -2098,83 +2098,159 @@ window.addEventListener("resize", adjustBodyPadding);
     SUPABASE_KEY
   );
 
+  /* =========================================
+     CONFIG
+     ========================================= */
+
   const MAX_COLS = 10;
 
-  /* =========================
-     ACCEPTED SCHEMAS
-     ========================= */
+  /*
+    SCOREBOARD PIPE HUNTER
 
-  const SCHEMAS = {
+    GOAL:
+    - Find ONLY scoreboard-style pipe strings
+    - Ignore raw content text
+    - Ignore answer banks
+    - Ignore instructional text
+    - Ignore hidden templates
 
-    standard_v1: {
-      fields: 6
-    },
+    REQUIRED CHARACTERISTICS:
+    - must contain pipes
+    - must look structured
+    - must contain score pattern like:
+        2/10
+        20%
+    - should usually contain filename
+  */
 
-    extended_v1: {
-      fields: 8
-    },
+  const PIPE_RULES = {
 
-    compact_v1: {
-      fields: 3
-    }
+    requirePipe: true,
+
+    requireScoreFraction: true,
+
+    requirePercent: true,
+
+    requireFilename: true,
+
+    minPipeCount: 4
 
   };
 
-  /* =========================
-     DETECT SCHEMA
-     ========================= */
+  /* =========================================
+     HELPERS
+     ========================================= */
 
-  function detectSchema(parts) {
+  function looksLikeFilename(v) {
 
-    for (const [name, schema] of Object.entries(SCHEMAS)) {
-
-      if (parts.length === schema.fields) {
-        return name;
-      }
-
-    }
-
-    return "unknown";
+    return /\.html?$/i.test(v || "");
   }
 
-  /* =========================
-     UNIVERSAL PIPE
-     ========================= */
+  function looksLikeScore(v) {
 
-  async function PIPE(pipeString) {
+    return /^\d+\s*\/\s*\d+$/.test(v || "");
+  }
 
-    if (!pipeString || typeof pipeString !== "string") {
-      console.warn("Invalid pipe string");
-      return;
+  function looksLikePercent(v) {
+
+    return /^\d+(\.\d+)?%$/.test(v || "");
+  }
+
+  function countPipes(str) {
+
+    return (str.match(/\|/g) || []).length;
+  }
+
+  /* =========================================
+     VALIDATE SCOREBOARD STRING
+     ========================================= */
+
+  function isScoreboardPipeString(str) {
+
+    if (!str || typeof str !== "string") {
+      return false;
     }
+
+    if (PIPE_RULES.requirePipe && !str.includes("|")) {
+      return false;
+    }
+
+    if (countPipes(str) < PIPE_RULES.minPipeCount) {
+      return false;
+    }
+
+    const parts = str
+      .split("|")
+      .map(v => v.trim());
+
+    /*
+      EXCLUDE RAW TEXT BLOCKS
+
+      If any segment is absurdly long,
+      it is probably question text,
+      answer text,
+      or embedded content.
+    */
+
+    const hasHugeText = parts.some(v => v.length > 120);
+
+    if (hasHugeText) {
+      return false;
+    }
+
+    /*
+      REQUIRE:
+      - filename
+      - score fraction
+      - percent
+    */
+
+    const hasFilename =
+      parts.some(looksLikeFilename);
+
+    const hasScore =
+      parts.some(looksLikeScore);
+
+    const hasPercent =
+      parts.some(looksLikePercent);
+
+    if (
+      PIPE_RULES.requireFilename &&
+      !hasFilename
+    ) {
+      return false;
+    }
+
+    if (
+      PIPE_RULES.requireScoreFraction &&
+      !hasScore
+    ) {
+      return false;
+    }
+
+    if (
+      PIPE_RULES.requirePercent &&
+      !hasPercent
+    ) {
+      return false;
+    }
+
+    return true;
+  }
+
+  /* =========================================
+     BUILD ROW
+     ========================================= */
+
+  function buildRow(pipeString) {
 
     const parts = pipeString
       .split("|")
-      .map(v => v?.trim() ?? "");
-
-    const schema = detectSchema(parts);
-
-    if (schema === "unknown") {
-      console.warn("Unknown schema:", pipeString);
-      return;
-    }
+      .map(v => v.trim());
 
     const row = {
 
-      schema_name: schema,
-
       raw_string: pipeString,
-
-      c1: parts[0] || null,
-      c2: parts[1] || null,
-      c3: parts[2] || null,
-      c4: parts[3] || null,
-      c5: parts[4] || null,
-      c6: parts[5] || null,
-      c7: parts[6] || null,
-      c8: parts[7] || null,
-      c9: parts[8] || null,
-      c10: parts[9] || null,
 
       field_count: parts.length,
 
@@ -2183,6 +2259,40 @@ window.addEventListener("resize", adjustBodyPadding);
       created_at: new Date().toISOString()
     };
 
+    /*
+      SEQUENTIAL LEFT→RIGHT FILL
+    */
+
+    for (let i = 0; i < MAX_COLS; i++) {
+
+      row["c" + (i + 1)] =
+        parts[i] !== undefined &&
+        parts[i] !== ""
+          ? parts[i]
+          : null;
+    }
+
+    return row;
+  }
+
+  /* =========================================
+     EXPORT
+     ========================================= */
+
+  async function PIPE(pipeString) {
+
+    if (!isScoreboardPipeString(pipeString)) {
+
+      console.warn(
+        "Rejected non-scoreboard pipe string:",
+        pipeString
+      );
+
+      return;
+    }
+
+    const row = buildRow(pipeString);
+
     console.log("PIPE EXPORT:", row);
 
     const { error } = await supabase
@@ -2190,17 +2300,129 @@ window.addEventListener("resize", adjustBodyPadding);
       .insert([row]);
 
     if (error) {
-      console.error("❌ PIPE ERROR:", error);
+
+      console.error(
+        "❌ PIPE ERROR:",
+        error
+      );
+
     } else {
-      console.log("✅ PIPE SENT");
+
+      console.log(
+        "✅ SCOREBOARD PIPE SENT"
+      );
     }
   }
 
-  /* =========================
-     GLOBAL EXPORT
-     ========================= */
+  /* =========================================
+     AUTO SCOREBOARD HUNTER
+     ========================================= */
+
+  function huntForScoreboardPipe() {
+
+    /*
+      PRIORITY TARGETS
+      ONLY LOOK IN SCOREBOARD AREAS
+    */
+
+    const targets = [
+
+      "#scoreboard",
+      "#scoreOutput",
+      ".scoreboard",
+      ".results",
+      ".finalScore",
+      "body"
+
+    ];
+
+    for (const selector of targets) {
+
+      const el = document.querySelector(selector);
+
+      if (!el) {
+        continue;
+      }
+
+      const text =
+        el.innerText ||
+        el.textContent ||
+        "";
+
+      /*
+        LOOK LINE BY LINE
+      */
+
+      const lines = text
+        .split("\n")
+        .map(v => v.trim())
+        .filter(Boolean);
+
+      for (const line of lines) {
+
+        if (isScoreboardPipeString(line)) {
+
+          console.log(
+            "🎯 SCOREBOARD PIPE FOUND:",
+            line
+          );
+
+          PIPE(line);
+
+          return;
+        }
+      }
+    }
+
+    console.warn(
+      "No scoreboard pipe found"
+    );
+  }
+
+  /* =========================================
+     AUTO HOOK
+     ========================================= */
+
+  document.addEventListener(
+    "DOMContentLoaded",
+    () => {
+
+      const btn =
+        document.getElementById("submitBtn");
+
+      if (!btn) {
+
+        console.warn(
+          "submitBtn not found"
+        );
+
+        return;
+      }
+
+      btn.addEventListener(
+        "click",
+        () => {
+
+          setTimeout(
+            huntForScoreboardPipe,
+            500
+          );
+        }
+      );
+
+      console.log(
+        "✅ SCOREBOARD PIPE HUNTER ACTIVE"
+      );
+    }
+  );
+
+  /*
+    MANUAL ACCESS
+  */
 
   window.PIPE = PIPE;
+  window.huntForScoreboardPipe =
+    huntForScoreboardPipe;
 
 })();
 </script>
