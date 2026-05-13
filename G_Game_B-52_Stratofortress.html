@@ -1633,10 +1633,43 @@ document.getElementById('downloadPngBtn').addEventListener('click', () => {
     });
 });
 // --- Event Listeners ---
-startBtn.addEventListener('click',startGame);
-submitBtn.addEventListener('click',submitResults);
-typingInput.addEventListener('input',handleTyping);
 
+startBtn.addEventListener(
+  'click',
+  startGame
+);
+
+submitBtn.addEventListener(
+  'click',
+  submitResults
+);
+
+/*
+  OPTIONAL typingInput
+  (safe if absent)
+*/
+
+if (
+  typeof typingInput !== "undefined" &&
+  typingInput &&
+  typeof handleTyping === "function"
+) {
+
+  typingInput.addEventListener(
+    'input',
+    handleTyping
+  );
+
+  console.log(
+    "typingInput hooked"
+  );
+
+} else {
+
+  console.log(
+    "typingInput missing — skipped"
+  );
+}
 
 // --- Green Border ---
 const borderDiv = document.createElement('div');
@@ -2084,194 +2117,91 @@ window.addEventListener("resize", adjustBodyPadding);
 (function () {
 
   /* =========================================
+     SAFETY BOOT CHECK
+     ========================================= */
+
+  if (!window.supabase) {
+    console.error("[PIPE] Supabase library failed to load.");
+    return;
+  }
+
+  /* =========================================
      SUPABASE CONFIG
      ========================================= */
 
   const SUPABASE_URL =
     "https://etwwriloppklhhkmswpr.supabase.co";
 
-  /*
-    IMPORTANT:
-    USE YOUR REAL SUPABASE ANON KEY
-  */
-
   const SUPABASE_KEY =
     "PASTE_REAL_ANON_KEY_HERE";
 
-  const supabase =
-    window.supabase.createClient(
+  let supabase = null;
+
+  try {
+    supabase = window.supabase.createClient(
       SUPABASE_URL,
       SUPABASE_KEY
     );
-
-  /* =========================================
-     CONFIG
-     ========================================= */
+  } catch (err) {
+    console.error("[PIPE] Supabase init failed:", err);
+  }
 
   const TABLE_NAME = "raw_pipe_ingest";
-
   const MAX_COLS = 10;
-
-  /*
-    Prevent duplicate exports
-  */
 
   let lastExportedPipe = null;
 
   /* =========================================
-     SAFE LOG
+     LOG HELPERS
      ========================================= */
 
-  function log() {
-
-    console.log(
-      "[PIPE]",
-      ...arguments
-    );
-  }
-
-  function warn() {
-
-    console.warn(
-      "[PIPE]",
-      ...arguments
-    );
-  }
-
-  function error() {
-
-    console.error(
-      "[PIPE]",
-      ...arguments
-    );
-  }
+  const log = (...a) => console.log("[PIPE]", ...a);
+  const warn = (...a) => console.warn("[PIPE]", ...a);
+  const error = (...a) => console.error("[PIPE]", ...a);
 
   /* =========================================
-     SCOREBOARD PIPE DETECTOR
+     VALIDATOR
      ========================================= */
 
   function isScoreboardPipeString(str) {
 
-    try {
+    if (!str || typeof str !== "string") return false;
+    if (!str.includes("|")) return false;
+    if (str.length > 300) return false;
 
-      if (!str) {
-        return false;
-      }
+    const parts = str.split("|").map(v => v.trim());
+    if (parts.length < 5) return false;
 
-      if (typeof str !== "string") {
-        return false;
-      }
+    const hasFraction = parts.some(v =>
+      /^\d+\s*\/\s*\d+$/.test(v)
+    );
 
-      if (!str.includes("|")) {
-        return false;
-      }
+    const hasPercent = parts.some(v =>
+      /^\d+(\.\d+)?%$/.test(v)
+    );
 
-      /*
-        Ignore absurdly large text blocks
-      */
-
-      if (str.length > 300) {
-        return false;
-      }
-
-      const parts = str
-        .split("|")
-        .map(v => String(v).trim());
-
-      /*
-        Require structure
-      */
-
-      if (parts.length < 5) {
-        return false;
-      }
-
-      /*
-        Require score
-      */
-
-      const hasFraction =
-        parts.some(v =>
-          /^\d+\s*\/\s*\d+$/.test(v)
-        );
-
-      const hasPercent =
-        parts.some(v =>
-          /^\d+(\.\d+)?%$/.test(v)
-        );
-
-      if (!hasFraction) {
-        return false;
-      }
-
-      if (!hasPercent) {
-        return false;
-      }
-
-      /*
-        Exclude giant raw text fields
-      */
-
-      const hasHugeField =
-        parts.some(v => v.length > 120);
-
-      if (hasHugeField) {
-        return false;
-      }
-
-      return true;
-
-    } catch (err) {
-
-      error(
-        "VALIDATOR CRASH:",
-        err
-      );
-
-      return false;
-    }
+    return hasFraction && hasPercent;
   }
 
   /* =========================================
-     BUILD ROW
+     ROW BUILDER
      ========================================= */
 
   function buildRow(pipeString) {
 
-    const parts = pipeString
-      .split("|")
-      .map(v => String(v).trim());
+    const parts = pipeString.split("|").map(v => v.trim());
 
     const row = {
-
       raw_string: pipeString,
-
       field_count: parts.length,
-
-      source_page:
-        location.pathname,
-
-      created_at:
-        new Date().toISOString()
+      source_page: location.pathname,
+      created_at: new Date().toISOString()
     };
 
-    /*
-      STRICT LEFT → RIGHT FILL
-    */
-
-    for (
-      let i = 0;
-      i < MAX_COLS;
-      i++
-    ) {
-
+    for (let i = 0; i < MAX_COLS; i++) {
       row["c" + (i + 1)] =
-
-        parts[i] !== undefined &&
-        parts[i] !== ""
-
+        parts[i] !== undefined && parts[i] !== ""
           ? parts[i]
-
           : null;
     }
 
@@ -2279,109 +2209,55 @@ window.addEventListener("resize", adjustBodyPadding);
   }
 
   /* =========================================
-     EXPORT
+     PIPE EXPORT
      ========================================= */
 
   async function PIPE(pipeString) {
 
     try {
 
-      log(
-        "RAW INPUT:",
-        pipeString
-      );
-
-      /*
-        Prevent duplicates
-      */
-
-      if (
-        pipeString ===
-        lastExportedPipe
-      ) {
-
-        warn(
-          "Duplicate blocked"
-        );
-
+      if (!supabase) {
+        warn("Supabase not ready");
         return;
       }
 
-      /*
-        Validate
-      */
-
-      if (
-        !isScoreboardPipeString(
-          pipeString
-        )
-      ) {
-
-        warn(
-          "Rejected non-scoreboard string"
-        );
-
+      if (!pipeString || typeof pipeString !== "string") {
+        warn("Invalid input");
         return;
       }
 
-      /*
-        Build row
-      */
+      if (pipeString === lastExportedPipe) {
+        warn("Duplicate blocked");
+        return;
+      }
 
-      const row =
-        buildRow(pipeString);
+      if (!isScoreboardPipeString(pipeString)) {
+        warn("Rejected:", pipeString);
+        return;
+      }
 
-      log(
-        "FINAL ROW:",
-        row
-      );
+      const row = buildRow(pipeString);
 
-      /*
-        INSERT
-      */
+      log("INSERT ROW:", row);
 
-      const response =
-        await supabase
-          .from(TABLE_NAME)
-          .insert([row])
-          .select();
+      const response = await supabase
+        .from(TABLE_NAME)
+        .insert([row])
+        .select();
 
-      /*
-        FULL DEBUG
-      */
-
-      log(
-        "SUPABASE RESPONSE:",
-        response
-      );
+      log("SUPABASE RESPONSE:", response);
 
       if (response.error) {
-
-        error(
-          "INSERT FAILED:",
-          response.error
-        );
-
+        error("INSERT FAILED:", response.error);
         return;
       }
 
-      /*
-        Success
-      */
+      lastExportedPipe = pipeString;
 
-      lastExportedPipe =
-        pipeString;
-
-      log(
-        "✅ INSERT SUCCESS"
-      );
+      log("✅ INSERT SUCCESS");
 
     } catch (err) {
-
-      error(
-        "PIPE CRASH:",
-        err
-      );
+      error("PIPE CRASH:", err);
     }
   }
 
@@ -2393,12 +2269,11 @@ window.addEventListener("resize", adjustBodyPadding);
 
     try {
 
-      log(
-        "HUNT STARTED"
-      );
+      log("HUNT STARTED");
 
       const targets = [
 
+        "#scoreboardContainer",  // ✅ FIXED (your real DOM)
         "#scoreboard",
         "#scoreOutput",
         "#results",
@@ -2410,41 +2285,22 @@ window.addEventListener("resize", adjustBodyPadding);
         ".finalScore",
 
         "[data-scoreboard]",
-
         "body"
-
       ];
 
-      for (
-        const selector of targets
-      ) {
+      for (const selector of targets) {
 
-        const elements =
-          document.querySelectorAll(
-            selector
-          );
-
-        if (!elements.length) {
-          continue;
-        }
+        const elements = document.querySelectorAll(selector);
+        if (!elements.length) continue;
 
         for (const el of elements) {
 
           const text =
-
             el.innerText ||
-
             el.textContent ||
-
             "";
 
-          if (!text) {
-            continue;
-          }
-
-          /*
-            Search line-by-line
-          */
+          if (!text) continue;
 
           const lines = text
             .split("\n")
@@ -2453,67 +2309,33 @@ window.addEventListener("resize", adjustBodyPadding);
 
           for (const line of lines) {
 
-            if (
-              isScoreboardPipeString(
-                line
-              )
-            ) {
-
-              log(
-                "🎯 SCOREBOARD FOUND:",
-                line
-              );
-
+            if (isScoreboardPipeString(line)) {
+              log("🎯 FOUND:", line);
               PIPE(line);
-
               return;
             }
           }
 
-          /*
-            Fallback:
-            search entire block
-          */
+          const fallback =
+            text.match(/[^\n]{0,250}\|[^\n]{0,250}/g) || [];
 
-          const possible =
-            text.match(
-              /[^\n]{0,250}\|[^\n]{0,250}/g
-            ) || [];
+          for (const item of fallback) {
 
-          for (const item of possible) {
+            const cleaned = item.trim();
 
-            const cleaned =
-              item.trim();
-
-            if (
-              isScoreboardPipeString(
-                cleaned
-              )
-            ) {
-
-              log(
-                "🎯 FALLBACK FOUND:",
-                cleaned
-              );
-
+            if (isScoreboardPipeString(cleaned)) {
+              log("🎯 FALLBACK:", cleaned);
               PIPE(cleaned);
-
               return;
             }
           }
         }
       }
 
-      warn(
-        "No scoreboard pipe found"
-      );
+      warn("No scoreboard pipe found");
 
     } catch (err) {
-
-      error(
-        "HUNTER CRASH:",
-        err
-      );
+      error("HUNTER CRASH:", err);
     }
   }
 
@@ -2521,99 +2343,35 @@ window.addEventListener("resize", adjustBodyPadding);
      AUTO HOOK
      ========================================= */
 
-  document.addEventListener(
-    "DOMContentLoaded",
-    () => {
+  document.addEventListener("DOMContentLoaded", () => {
 
-      log(
-        "✅ PIPE HUNTER ACTIVE"
-      );
+    log("✅ PIPE SYSTEM ACTIVE");
 
-      /*
-        Try multiple button names
-      */
+    const buttons = document.querySelectorAll(
+      "#submitBtn, #finishBtn, #doneBtn, #resultsBtn, button"
+    );
 
-      const possibleButtons = [
-
-        "#submitBtn",
-        "#finishBtn",
-        "#doneBtn",
-        "#resultsBtn",
-
-        ".submitBtn",
-        ".finishBtn",
-
-        "button"
-
-      ];
-
-      let hooked = false;
-
-      for (
-        const selector of possibleButtons
-      ) {
-
-        const buttons =
-          document.querySelectorAll(
-            selector
-          );
-
-        if (!buttons.length) {
-          continue;
-        }
-
-        for (const btn of buttons) {
-
-          btn.addEventListener(
-            "click",
-            () => {
-
-              log(
-                "BUTTON CLICK DETECTED"
-              );
-
-              /*
-                Wait for scoreboard render
-              */
-
-              setTimeout(
-                huntForScoreboardPipe,
-                800
-              );
-            }
-          );
-
-          hooked = true;
-        }
-      }
-
-      if (!hooked) {
-
-        warn(
-          "No buttons hooked"
-        );
-      }
-
-      /*
-        Emergency fallback:
-        automatic delayed hunt
-      */
-
-      setTimeout(
-        huntForScoreboardPipe,
-        3000
-      );
+    if (!buttons.length) {
+      warn("No buttons found");
     }
-  );
+
+    buttons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        log("CLICK DETECTED");
+        setTimeout(huntForScoreboardPipe, 800);
+      });
+    });
+
+    // backup sweep
+    setTimeout(huntForScoreboardPipe, 3000);
+  });
 
   /* =========================================
      GLOBAL ACCESS
      ========================================= */
 
   window.PIPE = PIPE;
-
-  window.huntForScoreboardPipe =
-    huntForScoreboardPipe;
+  window.huntForScoreboardPipe = huntForScoreboardPipe;
 
 })();
 </script>
