@@ -2,118 +2,10 @@
 <html lang="en">
 <head>
 
-<!-- Prevent flash before mode decision -->
-<script>
-document.documentElement.classList.add("pre-auto-open");
-</script>
-
-<script>
-(function () {
-
-  // ===== CORE SITE SETTINGS =====
-
-  window.TOC_MODE = "dynamic";
-  window.HOME_PAGE = "Bible_WEB_Version.html";
-  window.IS_SINGLE_SECTION = false;
-
-  const root = document.documentElement;
-
-  // ===== APPLY TOC MODE =====
-
-  function applyTOCMode() {
-    root.classList.remove("show-hard", "show-dynamic");
-
-    if (window.TOC_MODE === "hard") {
-      root.classList.add("show-hard");
-    }
-
-    if (window.TOC_MODE === "dynamic") {
-      root.classList.add("show-dynamic");
-    }
-  }
-
-  // Make available globally (since you use it elsewhere)
-  window.applyTOCMode = applyTOCMode;
-
-  applyTOCMode();
-
-  // ===== SINGLE LOAD HANDLER (MERGED) =====
-
-window.addEventListener("load", function () {
-
-  if (
-    window.sections &&
-    Array.isArray(window.sections) &&
-    typeof window.openQuizModal === "function"
-  ) {
-    const sectionCount = window.sections.length;
-    window.IS_SINGLE_SECTION = (sectionCount === 1);
-
-    if (window.IS_SINGLE_SECTION) {
-
-      root.classList.remove("show-hard", "show-dynamic");
-
-      if (!root.dataset.autoOpened) {
-        root.dataset.autoOpened = "1";
-        setTimeout(() => {
-          window.openQuizModal(0);
-        }, 0);
-
-      } else {
-        applyTOCMode();
-      }
-
-    } else {
-      applyTOCMode();
-    }
-  }
-
-  root.classList.remove("pre-auto-open");
-
-  // ===== HIDE LOADER =====
-  const loader = document.getElementById("loader");
-  if (loader) loader.style.display = "none";
-
-});
-  // ===== UNIVERSAL CLOSE HANDLER =====
-
-  document.addEventListener("click", function (e) {
-
-    const closeBtn = e.target.closest(
-      ".quiz-close, .modal-close, #closeModalBtn"
-    );
-
-    if (!closeBtn) return;
-
-    e.preventDefault();
-
-    const modalRoot = document.getElementById("modalRoot");
-
-    if (modalRoot) modalRoot.classList.remove("active");
-
-document.body.classList.remove("modal-open");
-
-// ✅ ONLY keep this logic here (no scroll handling here)
-
-if (window.IS_SINGLE_SECTION) {
-  // prevent browser from restoring old scroll position
-  if ('scrollRestoration' in history) {
-    history.scrollRestoration = 'manual';
-  }
-
-window.location.replace(window.location.pathname + "?reload=" + Date.now());
-  return;
-}
-
-applyTOCMode();
-  });
-
-})();
-</script>
 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>nPerfectlyPracticalEnglish.netlify.app</title>
+<title>PerfectlyPracticalEnglish.netlify.app</title>
 
 <style>
 
@@ -303,14 +195,21 @@ body.modal-open #tocColRight {
   position: relative;
   width: 100%;
   max-width: 360px;
-  height: auto;
-  max-height: 90vh;
+
+  height: calc(100dvh - var(--kb-offset, 0px));
+
   margin: 0 auto;
-  padding: 0 10px 10px 10px;
+
+  padding: 0 10px 120px 10px;
+
   background: #ffffff;
   box-sizing: border-box;
+
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+
   border-radius: 8px;
+
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
@@ -695,18 +594,27 @@ body::-webkit-scrollbar {
   font-size: 9px;
   opacity: 0.7;
 
-  height: 26px;          /* slightly smaller to raise it */
   padding: 0 6px;
   box-sizing: border-box;
 
-  display: flex;
-  align-items: center;   /* vertical centering */
-  justify-content: flex-start;
+  margin-top: 15px;
+  padding-left: 1px;
 
-  margin-top: 5px;     /* moves it UP 10px */
-  padding-left: 1px;    /* moves it RIGHT 5px (6 + 5) */
+  text-align: left;
+
+  display: block;
 }
 
+/* enforce vertical stacking */
+.copyrightSection > div {
+  display: block;
+}
+
+.visitor-count {
+  font-size: 12px;
+  opacity: 0.75;
+  margin-top: 4px;
+}
 
 .quiz-scoreboard {
   width: 100%;
@@ -856,6 +764,28 @@ button {
 .modal-close-btn:active {
   transform: scale(0.97);
 }
+
+
+h1[data-auto-title] {
+  visibility: hidden;
+}
+
+html.ui-ready h1[data-auto-title] {
+  visibility: visible;
+}
+
+#layout,
+#tocContainer {
+  padding-bottom: 30px;
+}
+
+
+.visits-bottom-space {
+  height: 140px; /* adjust this freely */
+  width: 100%;
+}
+
+
 </style>
 </head>
 <body>
@@ -2168,7 +2098,7 @@ BLANK
 
 
 <!-- ================= HARD-CODED TOC ================= -->
-<div id="layout">
+<!-- <div id="layout">
 
 <h1 data-auto-title></h1>
 
@@ -2190,7 +2120,7 @@ BLANK
     </div>
   </div>
 
-</div>
+</div> -->
 <!-- END #layout -->
 
 

@@ -272,8 +272,7 @@ img {
   filter: drop-shadow(0 0 6px rgba(0,0,0,0.9))
           drop-shadow(0 0 14px rgba(0,0,0,0.7))
           drop-shadow(0 0 28px rgba(0,0,0,0.5));
-
-
+}
 
 
 
@@ -283,12 +282,6 @@ img {
   position: relative;
   overflow: hidden;
 }
-
-
-
-
-
-
 
   </style>
 
@@ -513,13 +506,13 @@ img {
 
 
 
-    <div class="flyout-group right-buttons">
+<div class="flyout-group right-buttons">
       <button class="flyout-btn" onclick="togglePanel('rightPanel1')">T</button>
       <button class="flyout-btn" onclick="togglePanel('rightPanel2')">R</button>
     <button class="flyout-btn" onclick="togglePanel('rightPanel3')">S</button>
     <button class="flyout-btn" onclick="togglePanel('rightPanel4')">DQ</button>    
 <button class="flyout-btn" onclick="togglePanel('rightPanel5')">DR</button>
-    <button class="flyout-btn" onclick="togglePanel('rightPanel6')">PS</button>
+     <!--   <button class="flyout-btn" onclick="togglePanel('rightPanel6')">PS</button>-->
 
     </div>
 
@@ -595,95 +588,6 @@ window.addEventListener('load', () => {
     });
   </script>
 
-<script>
-(function() {
-  const btn = document.createElement('button');
-  btn.id = 'coffeeBreakBtn';
-  btn.textContent = 'B';
-  btn.className = 'flyout-btn';
-  btn.style.marginLeft = '10px';
-
-  const rightGroup = document.querySelector('.flyout-group.right-buttons');
-  if (rightGroup) rightGroup.insertBefore(btn, rightGroup.firstChild);
-
-  // Overlay and modal container
-  const modal = document.createElement('div');
-  modal.id = 'breakModal';
-  Object.assign(modal.style, {
-    position: 'fixed',
-    top: '0',
-    left: '0',
-    width: '100vw',
-    height: '100vh',
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
-    display: 'none',
-    justifyContent: 'center',
-    alignItems: 'center',
-    flexDirection: 'column',
-    fontSize: '30px',
-    color: 'white',
-    zIndex: '9999',
-    pointerEvents: 'none', // clicks pass through
-    textAlign: 'center'
-  });
-
-  const heading = document.createElement('h1');
-  heading.textContent = '☕ Break Time!';
-  heading.style.textShadow = '0 0 30px rgba(0,0,0,1), 0 0 50px rgba(0,0,0,0.8)';
-  modal.appendChild(heading);
-
-  const timer = document.createElement('div');
-  timer.id = 'timer';
-  timer.textContent = '5:00';
-  timer.style.textShadow = '0 0 30px rgba(0,0,0,1), 0 0 50px rgba(0,0,0,0.8)';
-  modal.appendChild(timer);
-
-  document.body.appendChild(modal);
-
-  let timerInterval = null;
-  let remainingTime = 300; // default 5 min
-
-  function updateTimerDisplay(time) {
-    const m = Math.floor(time / 60);
-    const s = (time % 60).toString().padStart(2, '0');
-    timer.textContent = `${m}:${s}`;
-  }
-
-  function startTimer(duration = 300) {
-    remainingTime = duration;
-    modal.style.display = 'flex';
-    btn.classList.add('active');
-    updateTimerDisplay(remainingTime);
-
-    clearInterval(timerInterval);
-    timerInterval = setInterval(() => {
-      remainingTime--;
-      updateTimerDisplay(remainingTime);
-
-      if (remainingTime <= 0) {
-        clearInterval(timerInterval);
-        modal.style.display = 'none';
-        btn.classList.remove('active');
-      }
-    }, 1000);
-  }
-
-  function stopTimer() {
-    clearInterval(timerInterval);
-    modal.style.display = 'none';
-    btn.classList.remove('active');
-  }
-
-  // Button toggles timer: start if not running, stop if running
-  btn.addEventListener('click', () => {
-    if (modal.style.display === 'flex') {
-      stopTimer();
-    } else {
-      startTimer();
-    }
-  });
-})();
-</script>
 <script>
 (function() {
   const rawList = `
@@ -869,7 +773,7 @@ Kom (14).jpg
 
 <script>
 (function(){
-    const PNG_SRC = "PerfectlyPracticalEnglish™.netlify_with_Hotspot.app.png";
+    const PNG_SRC = "PerfectlyPracticalEnglish_with_Hotspot.app.png";
     const PNG_WIDTH = 200;
 
     const INSET_RIGHT = 80;
@@ -1069,7 +973,7 @@ document.addEventListener("DOMContentLoaded", () => {
   /* ===========================
      CONFIG (your original values)
      =========================== */
-  const PNG_SRC      = "PerfectlyPracticalEnglish™.netlify_with_Hotspot.app.png";
+  const PNG_SRC      = "PerfectlyPracticalEnglish_with_Hotspot.app.png";
   const PNG_WIDTH    = 200;
   const INSET_RIGHT  = 80;
   const INSET_TOP    = 40;
@@ -1127,6 +1031,109 @@ rdBtn.addEventListener("click", () => {
   panel.classList.toggle("closed");
 });
 
+})();
+</script>
+
+<script>
+(function () {
+  // Prevent double-injection
+  if (document.getElementById('coffeeBreakBtn')) return;
+
+  // -----------------------------
+  // Create button
+  // -----------------------------
+  const btn = document.createElement('button');
+  btn.id = 'coffeeBreakBtn';
+  btn.textContent = 'B';
+  btn.className = 'flyout-btn';
+  btn.style.marginLeft = '10px';
+
+  const rightGroup = document.querySelector('.flyout-group.right-buttons');
+  if (rightGroup) rightGroup.insertBefore(btn, rightGroup.firstChild);
+
+  // -----------------------------
+  // Create modal
+  // -----------------------------
+  const modal = document.createElement('div');
+  modal.id = 'breakModal';
+
+  Object.assign(modal.style, {
+    position: 'fixed',
+    inset: '0',
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    display: 'none',
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexDirection: 'column',
+    fontSize: '30px',
+    color: 'white',
+    zIndex: '9999',
+    textAlign: 'center',
+    pointerEvents: 'none'
+  });
+
+  const heading = document.createElement('h1');
+  heading.textContent = '☕ Break Time!';
+  heading.style.textShadow = '0 0 30px rgba(0,0,0,1), 0 0 50px rgba(0,0,0,0.8)';
+  modal.appendChild(heading);
+
+  const timerEl = document.createElement('div');
+  timerEl.textContent = '5:00';
+  timerEl.style.textShadow = heading.style.textShadow;
+  modal.appendChild(timerEl);
+
+  document.body.appendChild(modal);
+
+  // -----------------------------
+  // State
+  // -----------------------------
+  let interval = null;
+  let remaining = 300;
+  let running = false;
+
+  function render() {
+    const m = Math.floor(remaining / 60);
+    const s = String(remaining % 60).padStart(2, '0');
+    timerEl.textContent = `${m}:${s}`;
+  }
+
+  function start(duration = 300) {
+    stop(); // always reset cleanly
+
+    remaining = duration;
+    running = true;
+
+    modal.style.display = 'flex';
+    btn.classList.add('active');
+
+    render();
+
+    interval = setInterval(() => {
+      remaining--;
+      render();
+
+      if (remaining <= 0) {
+        stop();
+      }
+    }, 1000);
+  }
+
+  function stop() {
+    running = false;
+
+    clearInterval(interval);
+    interval = null;
+
+    modal.style.display = 'none';
+    btn.classList.remove('active');
+  }
+
+  function toggle() {
+    if (running) start();   // restart fresh if clicked again
+    else start(300);
+  }
+
+  btn.addEventListener('click', toggle);
 })();
 </script>
 
@@ -1508,7 +1515,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const title = filename.replace(/_/g, " ");
 
     // Replace the first <h1>
-    const h1 = document.querySelector("h1");
+    const h1 = document.querySelector("body > h1");
     if (h1) {
         h1.textContent = title;
     }
