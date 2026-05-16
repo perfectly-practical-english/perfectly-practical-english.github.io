@@ -1590,9 +1590,15 @@ submitBtn.disabled = true;
         `${fileName}|${nameInput.value.trim()}|${idInput.value.trim()}|` +
         `${dateStr}|${correctWords}/${totalExercises}|${pct}%`;
 
-    scoreboardContainer.textContent = scoreLine;
-    scoreButtons.style.display = 'flex';
+
+// --- Supabase Spot ---
+
+scoreboardContainer.textContent = scoreLine;
+scoreButtons.style.display = 'flex';
+
+saveResult(scoreLine);
 }
+
 function resetGame(){
     window.activeSentences.forEach(s=>{if(s.span.parentNode)s.span.parentNode.removeChild(s.span);});
     window.activeSentences=[]; planeX=-100; plane.style.left=planeX+'px';
@@ -2113,18 +2119,19 @@ window.addEventListener("resize", adjustBodyPadding);
 
 
 <!-- SUPABASE LIBRARY -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
 <script>
-
 // ======================================
 // SUPABASE INITIALIZATION
 // ======================================
-
-const supabase = window.supabase.createClient(
+const supabaseClient = window.supabase.createClient(
   'https://etwwriloppklhhkmswpr.supabase.co',
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV0d3dyaWxvcHBrbGhoa21zd3ByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NDM3NTcsImV4cCI6MjA5NDExOTc1N30.rmquTqYW6WqS7jZUbHM_gWecka3jkiWzYb14eJ10hpQ'
 );
+</script>
+
+
 
 // ======================================
 // SAVE RESULT TO SUPABASE
@@ -2163,31 +2170,6 @@ async function saveResult(textToSave) {
   }
 
 }
-
-// ======================================
-// AUTO-SAVE AFTER SUBMIT
-// ======================================
-
-document.getElementById('submitBtn').addEventListener('click', () => {
-
-  // Wait for scoreboard to update first
-  setTimeout(() => {
-
-    const scoreLine =
-      scoreboardContainer.textContent.trim();
-
-    if (!scoreLine) {
-
-      console.error('No scoreboard text found.');
-      return;
-
-    }
-
-    saveResult(scoreLine);
-
-  }, 100);
-
-});
 
 </script>
 </body>
