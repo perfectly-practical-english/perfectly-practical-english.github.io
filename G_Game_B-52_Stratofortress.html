@@ -2083,51 +2083,52 @@ window.addEventListener("resize", adjustBodyPadding);
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-
 // ======================================
 // SUPABASE INITIALIZATION (SAFE)
 // ======================================
 
-const supabase = window.supabase?.createClient?.(
+const supabaseClient = window.supabase?.createClient?.(
   'https://etwwriloppklhhkmswpr.supabase.co',
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV0d3dyaWxvcHBrbGhoa21zd3ByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NDM3NTcsImV4cCI6MjA5NDExOTc1N30.rmquTqYW6WqS7jZUbHM_gWecka3jkiWzYb14eJ10hpQ'
 );
 
-const supabaseReady = !!supabase;
+if (!supabaseClient) {
+  console.warn('Supabase failed to initialize');
+}
 
 // Prevent duplicate uploads
 let lastUploadedScore = null;
 
 // ======================================
-// UNIVERSAL SCORE EXPORTER (SAFE)
+// UNIVERSAL SCORE EXPORTER
 // ======================================
 
 async function saveResult(textToSave) {
 
-  if (!supabaseReady) return;
+  if (!supabaseClient) return;
 
-  if (!textToSave || typeof textToSave !== 'string') {
+  if (typeof textToSave !== 'string' || !textToSave.trim()) {
     console.error('Invalid scoreboard text.');
     return;
   }
 
+  const cleaned = textToSave.trim();
+
   // prevent duplicate submissions
-  if (textToSave === lastUploadedScore) return;
-  lastUploadedScore = textToSave;
+  if (cleaned === lastUploadedScore) return;
+  lastUploadedScore = cleaned;
 
   try {
-    const { error } = await supabase
+    const { error } = await supabaseClient
       .from('results')
       .insert([
-        {
-          result_text: textToSave
-        }
+        { result_text: cleaned }
       ]);
 
     if (error) {
-      console.error('Supabase error:', error);
+      console.error('Supabase insert error:', error);
     } else {
-      console.log('Score saved.');
+      console.log('Score saved to Supabase.');
     }
 
   } catch (err) {
@@ -2137,32 +2138,30 @@ async function saveResult(textToSave) {
 
 
 // ======================================
-// PASSIVE SCORE DETECTOR (NO GAME CHANGES)
+// PASSIVE SCORE DETECTOR
 // ======================================
 
-const scoreboardContainer = document.getElementById('scoreboardContainer');
+const scoreboardContainerEl = document.getElementById('scoreboardContainer');
 
-if (scoreboardContainer) {
+if (scoreboardContainerEl) {
 
   const observer = new MutationObserver(() => {
 
-    const text = scoreboardContainer.textContent?.trim();
+    const text = scoreboardContainerEl.textContent?.trim();
 
-    // only send final-looking results
-    if (!text) return;
-    if (!text.includes('%')) return; // your final score format check
+    // only final score format
+    if (!text || !text.includes('%')) return;
 
     saveResult(text);
   });
 
-  observer.observe(scoreboardContainer, {
+  observer.observe(scoreboardContainerEl, {
     childList: true,
     subtree: true,
     characterData: true
   });
 
 }
-
 </script>
 
 </body>
