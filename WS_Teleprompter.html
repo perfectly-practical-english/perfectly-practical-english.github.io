@@ -2918,131 +2918,6 @@ safeInsert(activeSpeechTarget, finalText + " ");
 
 
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-(function () {
-  /* ===============================
-     1. SUPABASE SETUP
-     =============================== */
-  const supabase = window.supabase.createClient(
-    "https://rhmbuqwbjacvbobxmyvx.supabase.co",
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJobWJ1cXdiamFjdmJvYnhteXZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU1NDkyNzAsImV4cCI6MjA4MTEyNTI3MH0.lcSeTgeFAr-I286W9yXEGxWmqGAP5fZPV9jsaaCvTY8"
-  );
-
-  /* ===============================
-     2. READ SCOREBOARD FROM DOM
-     =============================== */
-  function readScoreboard() {
-    const filename = document.getElementById("fileNameOutput")?.textContent || null;
-    const student_name = document.getElementById("userNameOutput")?.textContent || null;
-    const student_id = document.getElementById("userIdOutput")?.textContent || null;
-
-    const scoreText = document.getElementById("scoreOutput")?.textContent || "";
-    const match = scoreText.match(/(\d+)\/(\d+)\s+\(([\d.]+)%\)/);
-
-    return {
-      filename,
-      student_name,
-      student_id,
-      score: match ? Number(match[1]) : null,
-      percentage_correct: match ? Number(match[3]) : null,
-      extra_data: {
-        page: window.location.pathname,
-        sections: Array.from(
-          document.querySelectorAll(".section-score")
-        ).map(el => el.textContent)
-      }
-    };
-  }
-
-  /* ===============================
-     3. INSERT INTO SUPABASE
-     =============================== */
-  async function saveScoreboard() {
-    const row = readScoreboard();
-
-    console.log("📤 Sending to Supabase:", row);
-
-    const { data, error } = await supabase
-      .from("student_scores")
-      .insert([{
-        ...row,
-        date: new Date().toISOString()
-      }])
-      .select();
-
-    if (error) {
-      console.error("❌ Supabase insert failed:", error);
-    } else {
-      console.log("✅ Supabase insert success:", data);
-    }
-  }
-
-  /* ===============================
-     4. AUTO-HOOK INTO SUBMIT BUTTON
-     =============================== */
-  document.addEventListener("DOMContentLoaded", () => {
-    const submitBtn = document.getElementById("submitBtn");
-
-    if (!submitBtn) {
-      console.warn("⚠️ submitBtn not found");
-      return;
-    }
-
-    submitBtn.addEventListener("click", async () => {
-      // Wait a tick so scoreboard finishes rendering
-      setTimeout(saveScoreboard, 300);
-    });
-
-    console.log("✅ Supabase scoreboard auto-save active");
-  });
-
-})();
-</script>
-
-<script>
-/* =========================================
-   AUTO-OPEN SINGLE SECTION (AUTHORITATIVE)
-   ========================================= */
-
-(function () {
-  function ready() {
-    return (
-      Array.isArray(window.SCRAMBLE_SECTIONS) &&
-      window.SCRAMBLE_SECTIONS.length === 1 &&
-      document.getElementById("sectionSelect")
-    );
-  }
-
-  function autoOpen() {
-    console.log("🟢 Single section detected — auto-opening");
-
-    // force index to the only section
-    window.SCRAMBLE_INDEX = 0;
-
-    // IMPORTANT:
-    // trigger the SAME logic your app already trusts
-    document.getElementById("sectionSelect").click();
-  }
-
-  if (ready()) {
-    autoOpen();
-    return;
-  }
-
-  let tries = 0;
-  const t = setInterval(() => {
-    if (ready()) {
-      clearInterval(t);
-      autoOpen();
-    }
-    if (++tries > 40) clearInterval(t);
-  }, 50);
-})();
-</script>
-
-
-
 <script>
 document.addEventListener("DOMContentLoaded", function () {
 
@@ -3357,6 +3232,81 @@ window.addEventListener("resize", adjustBodyPadding);
   document.addEventListener('touchend', preventDoubleTap, { passive: false });
   document.addEventListener('gesturestart', preventGesture, { passive: false });
 })();
+</script>
+
+<!-- SUPABASE LIBRARY -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+
+const supabaseClient = window.supabase?.createClient(
+  'https://etwwriloppklhhkmswpr.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV0d3dyaWxvcHBrbGhoa21zd3ByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NDM3NTcsImV4cCI6MjA5NDExOTc1N30.rmquTqYW6WqS7jZUbHM_gWecka3jkiWzYb14eJ10hpQ'
+);
+
+if (!supabaseClient) {
+  console.error("❌ Supabase failed to initialize");
+}
+
+let lastUploadedScore = null;
+
+window.saveResult = async function saveResult(text) {
+  if (!window.supabaseClient) {
+    console.error("❌ Supabase client not ready");
+    return;
+  }
+
+  if (!supabaseClient) {
+    console.error("❌ No Supabase client");
+    return;
+  }
+
+  // ======================
+  // NORMALIZE INPUT
+  // ======================
+  let cleaned;
+
+  try {
+    cleaned = (typeof text === "string")
+      ? text
+      : JSON.stringify(text);
+
+    cleaned = cleaned.replace(/\s+/g, " ").trim();
+
+  } catch (err) {
+    console.error("❌ Normalize error:", err);
+    return;
+  }
+
+  if (!cleaned) {
+    console.error("❌ Empty value blocked");
+    return;
+  }
+
+  if (cleaned === lastUploadedScore) {
+    console.log("⚠️ Duplicate blocked");
+    return;
+  }
+
+  lastUploadedScore = cleaned;
+
+  console.log("📤 INSERTING INTO scoreboard_raw:", cleaned);
+
+  const { data, error } = await supabaseClient
+    .from("scoreboard_raw")
+    .insert([
+      { result_text: cleaned }
+    ])
+    .select();
+
+  if (error) {
+    console.error("❌ INSERT FAILED FULL ERROR:", error);
+    return;
+  }
+
+  console.log("✅ INSERT SUCCESS:", data);
+};
+
 </script>
 
 </body>
