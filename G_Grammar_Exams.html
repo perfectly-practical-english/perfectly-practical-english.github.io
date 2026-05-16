@@ -6657,6 +6657,15 @@ function findParagraphIndex(globalCharIndex) {
 
     const isCorrect = userAnswers.every(ans => correctAnswers.includes(ans));
 
+window.saveResult?.(
+  JSON.stringify({
+    correct: isCorrect,
+    userAnswers,
+    correctAnswers,
+    time: new Date().toISOString()
+  })
+);
+
     // Remove previous emojis
     exercise.querySelectorAll('.mc-emoji').forEach(span => span.remove());
 
