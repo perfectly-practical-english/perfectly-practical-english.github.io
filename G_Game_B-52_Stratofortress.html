@@ -1590,8 +1590,13 @@ submitBtn.disabled = true;
         `${fileName}|${nameInput.value.trim()}|${idInput.value.trim()}|` +
         `${dateStr}|${correctWords}/${totalExercises}|${pct}%`;
 
-    scoreboardContainer.textContent = scoreLine;
-    scoreButtons.style.display = 'flex';
+
+// --- Send to SupaBase spot ---
+scoreboardContainer.textContent = scoreLine;
+scoreButtons.style.display = 'flex';
+
+console.log("🚀 ABOUT TO SEND TO SUPABASE:", scoreLine);
+window.saveResult(scoreLine);
 }
 function resetGame(){
     window.activeSentences.forEach(s=>{if(s.span.parentNode)s.span.parentNode.removeChild(s.span);});
