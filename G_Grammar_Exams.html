@@ -6054,14 +6054,12 @@ correctAnswers += Number(ex.dataset.score || 0);
       const resultText = `${filename}|${section}::${subsection}|${name}|${id}|${dateString}|${correctAnswers}/${totalExercises}|${percentage}%`;
 
       const board = sub.querySelector('.quiz-scoreboard');
-const dataEl = board.querySelector('.scoreboard-data');
-if (dataEl) dataEl.textContent = resultText;
-board.style.display = 'block';
+      const dataEl = board.querySelector('.scoreboard-data');
+      if (dataEl) dataEl.textContent = resultText;
+      board.style.display = 'block';
+    }
 
-// === SUPABASE WRITE HOOK ===
-if (typeof window.saveResult === "function") {
-  window.saveResult(resultText);
-}
+
   });
 })();
 </script>
@@ -6657,15 +6655,6 @@ function findParagraphIndex(globalCharIndex) {
 
     const isCorrect = userAnswers.every(ans => correctAnswers.includes(ans));
 
-window.saveResult?.(
-  JSON.stringify({
-    correct: isCorrect,
-    userAnswers,
-    correctAnswers,
-    time: new Date().toISOString()
-  })
-);
-
     // Remove previous emojis
     exercise.querySelectorAll('.mc-emoji').forEach(span => span.remove());
 
@@ -6703,9 +6692,12 @@ const percentage = correctCount * 100;
 
 // store score in the element so Submit can display later
 exercise.dataset.score = correctCount;
-exercise.dataset.percentage = percentage;
+👉 WITH THIS:
+  exercise.dataset.percentage = percentage;
 });
 
+})(); // <-- CLOSE IIFE PROPERLY HERE
+</script>
 
 
 
