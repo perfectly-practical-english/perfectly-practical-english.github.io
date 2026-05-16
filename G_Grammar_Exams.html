@@ -8088,7 +8088,7 @@ if (!supabaseClient) {
 let lastUploadedScore = null;
 
 window.saveResult = async function saveResult(text) {
-
+  console.log("🚀 saveResult CALLED:", text);
   if (!supabaseClient) {
     console.error("❌ No Supabase client");
     return;
