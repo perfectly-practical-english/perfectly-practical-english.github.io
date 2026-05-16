@@ -1268,7 +1268,7 @@ update();
 // --- Sentences array (to be initialized) ---
 let sentences = [];
 let totalExercises = 0;
-<!--let sectionAnswerPool = [];-->
+// let sectionAnswerPool = [];
 
 // --- Load sentences from raw text or external file ---
 async function initSentences() {
@@ -2112,7 +2112,6 @@ window.addEventListener("resize", adjustBodyPadding);
 </script>
 
 
-
 <!-- SUPABASE LIBRARY -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -2123,17 +2122,16 @@ window.addEventListener("resize", adjustBodyPadding);
 // ======================================
 
 const supabase = window.supabase.createClient(
-  'https://etwwriloppklhhkmswpr.supabase.co/rest/v1/',
+  'https://etwwriloppklhhkmswpr.supabase.co',
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV0d3dyaWxvcHBrbGhoa21zd3ByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NDM3NTcsImV4cCI6MjA5NDExOTc1N30.rmquTqYW6WqS7jZUbHM_gWecka3jkiWzYb14eJ10hpQ'
 );
 
 // ======================================
-// UNIVERSAL SCORE EXPORTER
+// SAVE RESULT TO SUPABASE
 // ======================================
 
 async function saveResult(textToSave) {
 
-  // Prevent invalid exports
   if (
     !textToSave ||
     typeof textToSave !== 'string'
@@ -2142,39 +2140,56 @@ async function saveResult(textToSave) {
     return;
   }
 
-  // Send ENTIRE string into ONE Supabase cell
-  const { error } = await supabase
+  console.log('Saving:', textToSave);
+
+  const { data, error } = await supabase
     .from('results')
     .insert([
       {
         result_text: textToSave
       }
-    ]);
+    ])
+    .select();
 
   if (error) {
+
     console.error('Supabase error:', error);
+
   } else {
-    console.log('Score saved.');
+
+    console.log('Score saved successfully.');
+    console.log(data);
+
   }
 
 }
 
 // ======================================
-// EXAMPLE USAGE
+// AUTO-SAVE AFTER SUBMIT
 // ======================================
 
-// Whatever your scoreboard currently displays
-const scoreLine =
-  `${currentFile}|${activeSectionName}|${nameInput.value.trim()}|${idInput.value.trim()}|${dateStr}|${correctWords}/${totalWords}|${pct}%`;
+document.getElementById('submitBtn').addEventListener('click', () => {
 
-// Display scoreboard
-scoreboardContainer.textContent = scoreLine;
+  // Wait for scoreboard to update first
+  setTimeout(() => {
 
-// Export EXACT displayed text
-saveResult(scoreLine);
+    const scoreLine =
+      scoreboardContainer.textContent.trim();
+
+    if (!scoreLine) {
+
+      console.error('No scoreboard text found.');
+      return;
+
+    }
+
+    saveResult(scoreLine);
+
+  }, 100);
+
+});
 
 </script>
-
 </body>
 </html>
 
