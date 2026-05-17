@@ -311,26 +311,6 @@
 
 <script>
 
-
-  // Data
-
-// 🔌 Shell ↔ Scramble adapter
-const playerNameInput =
-  document.getElementById('playerName') ||
-  document.getElementById('scrambleName');
-
-const playerIdInput =
-  document.getElementById('playerID') ||
-  document.getElementById('scrambleId');
-
-const scoreboard =
-  document.getElementById('scrambleScoreOutput') ||
-  document.getElementById('scoreboard');
-let activeSectionText = "";
-
-</script>
-<script>
-
 document.getElementById("startBtn").addEventListener("click", () => {
   const index = window.getSelectedSectionIndex();
 
@@ -455,8 +435,9 @@ div.style.pointerEvents = 'auto';
   container.appendChild(div);
 });
 
-document.getElementById('submitBtn').disabled = false;
-document.getElementById('scoreboard').style.display = 'none';
+  document.getElementById('scrambleSubmitBtn').disabled = false;
+  document.getElementById('scrambleScoreboard').style.display = 'none';
+}
 
 // 🔁 Click-to-swap
 function handleTileClick(tile) {
@@ -493,44 +474,13 @@ function shuffle(arr) {
   return arr;
 }
 
-// 🧮 Score output
-function getScoreOutput() {
-  const tiles = [...container.querySelectorAll('.tile')];
-
-  let score = 0;
-  tiles.forEach((tile, i) => {
-    if (tile.textContent === sentences[i]) score++;
-  });
-
-  const name = document.getElementById('scrambleName').value.trim();
-  const id = document.getElementById('scrambleId').value.trim();
-  const percent = ((score / sentences.length) * 100).toFixed(1);
-  const date = new Date().toLocaleString('en-GB', { hour12: false });
-
-  return `Name: ${name} | ID: ${id} | Date: ${date} | Score: ${score}/${sentences.length} (${percent}%)`;
-}
 
 // ✅ Submit
-document.getElementById('submitBtn').addEventListener('click', () => {
-  const out = buildScoreString();
-  if (!out) {
-    alert("Start the game first.");
-    return;
-  }
+document.getElementById('scrambleSubmitBtn').addEventListener('click', () => {
+  const out = getScoreOutput();
+  document.getElementById('scrambleScoreOutput').textContent = out;
+  document.getElementById('scrambleScoreboard').style.display = 'block';
 
-  scoreboard.textContent = out;
-  scoreboard.style.display = 'block';
-
-  document.getElementById('scoreButtons').style.display = 'flex';
-
-  document.querySelectorAll('.tile').forEach(t => {
-    t.style.pointerEvents = 'none';
-  });
-
-  requestAnimationFrame(() => {
-    if (typeof saveToSupabase === "function") saveToSupabase(out);
-  });
-});
   document.getElementById('scrambleSubmitBtn').disabled = true;
 
 container.querySelectorAll('.tile').forEach(t => {
@@ -541,29 +491,31 @@ container.querySelectorAll('.tile').forEach(t => {
 });
 
 // 📋 Copy
-document.getElementById('scrambleCopyBtn').addEventListener('click', () => {
-  navigator.clipboard.writeText(
-    document.getElementById('scrambleScoreOutput').textContent
-  );
+document.getElementById('copyScore')?.addEventListener('click', () => {
+  if (!scoreboard.textContent) return;
+
+  navigator.clipboard.writeText(scoreboard.textContent);
   alert('Score copied!');
 });
-
 // 📄 TXT
-document.getElementById('scrambleDownloadTextBtn').addEventListener('click', () => {
-  const text = document.getElementById('scrambleScoreOutput').textContent;
-  const blob = new Blob([text], { type: 'text/plain' });
+document.getElementById('downloadTxt')?.addEventListener('click', () => {
+  if (!scoreboard.textContent) return;
+
+  const blob = new Blob([scoreboard.textContent], { type: 'text/plain' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = 'scramble_score.txt';
+  a.download = 'score.txt';
   a.click();
 });
 
 // 🖼 PNG
-document.getElementById('scrambleDownloadPngBtn').addEventListener('click', () => {
-  html2canvas(document.getElementById('scrambleScoreOutput')).then(canvas => {
+document.getElementById('downloadPng')?.addEventListener('click', () => {
+  if (!scoreboard.textContent || !window.html2canvas) return;
+
+  html2canvas(scoreboard).then(canvas => {
     const a = document.createElement('a');
     a.href = canvas.toDataURL('image/png');
-    a.download = 'scramble_score.png';
+    a.download = 'score.png';
     a.click();
   });
 });
@@ -809,11 +761,8 @@ window.getSelectedSectionIndex = function () {
 window.selectSectionByIndex = function (index) {
   if (!index || index === 0) return;
 
+  // 🔥 FORCE section open
   const section = sections[index];
-
-  // 🔥 FIX: keep global state in sync
-  window.activeSectionIndex = index;
-  activeSectionText = section.text;
 
   window.dispatchEvent(new CustomEvent("sectionchange", {
     detail: {
@@ -823,6 +772,8 @@ window.selectSectionByIndex = function (index) {
     }
   }));
 };
+
+
 
 // 🔑 START ON PLACEHOLDER VISUALLY, BUT ALLOW SELECTION
 selectSection(0, false);
@@ -897,23 +848,22 @@ selectSection(0, false);
      CANONICAL SCORE STRING
      =============================== */
 
-function buildScoreString() {
-  const tiles = [...document.querySelectorAll(".tile")];
-
-  // HARD GUARD: no game = no scoreboard
-  if (!tiles.length || !sentences.length) return "";
+  function buildScoreString() {
+    const tiles = [...document.querySelectorAll(".tile")];
+    if (!tiles.length) return "";
 
     let correct = 0;
     const total = tiles.length;
 
-tiles.forEach((tile, i) => {
-  const text = tile.querySelector(".sentence")?.textContent?.trim();
-  const original = sentences[i]?.trim();
-
-  if (text === original) {
-    correct++;
-  }
-});
+    tiles.forEach(tile => {
+      if (
+        tile.classList.contains("correct") ||
+        tile.dataset.correct === "true" ||
+        tile.getAttribute("aria-correct") === "true"
+      ) {
+        correct++;
+      }
+    });
 
     const percent = Math.round((correct / total) * 100);
 
@@ -932,7 +882,7 @@ tiles.forEach((tile, i) => {
      SUBMIT (NON-DESTRUCTIVE)
      =============================== */
 
-  document.getElementById("submitBtn")?.addEventListener("click", () => {
+  submitBtn.addEventListener("click", () => {
     const dataString = buildScoreString();
     if (!dataString) {
       alert("Start the game first.");
@@ -940,13 +890,10 @@ tiles.forEach((tile, i) => {
     }
 
 scoreboard.textContent = dataString;
+scoreboard.style.display = "block";
+scoreboard.style.visibility = "visible";
+scoreboard.style.opacity = "1";
 
-Object.assign(scoreboard.style, {
-  display: "block",
-  visibility: "visible",
-  opacity: "1",
-  whiteSpace: "normal"
-});
 if (scoreBtns) scoreBtns.style.display = "flex";
 
     document.querySelectorAll(".tile").forEach(t => {
