@@ -1245,13 +1245,26 @@ sec.lines.forEach((line, lIdx) => {
                      `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
 
   // --- Final data string ---
-  const resultText = `${filename}|${name}|${id}|${dateString}|${correctCount}/${total}|${percentage}%`;
+const resultText = `${filename}|${name}|${id}|${dateString}|${correctCount}/${total}|${percentage}%`;
 
-  // --- Show on scoreboard ---
+// --- Show on scoreboard ---
 scoreData.textContent = resultText;
 scoreboard.style.display = 'block';
 
-saveResult(resultText);
+// --- SAFE SUPABASE PAYLOAD (DO NOT TOUCH UI ABOVE) ---
+const resultPayload = {
+  filename,
+  name,
+  id,
+  date: dateString,
+  correct: correctCount,
+  total,
+  percentage,
+  raw: resultText
+};
+
+// send to Supabase
+saveResult(resultPayload);
 });
 
 copyButton.addEventListener('click', ()=>{ navigator.clipboard.writeText(scoreData.textContent).then(()=>alert('Copied to clipboard')); });
