@@ -2000,18 +2000,19 @@ document.getElementById('scrambleSubmitBtn').addEventListener('click', async () 
 
   const scoreText = `${filename}|Scramble|${nm}|${id}|${dateStr}|${score}/${divs.length}|${percentScramble}%`;
 
+console.log("🧾 Final scoreText:", scoreText);
+
   const scoreOutput = document.getElementById('scrambleScoreOutput');
   scoreOutput.textContent = scoreText;
   document.getElementById('scrambleScoreboard').style.display = 'block';
   document.getElementById('scrambleSubmitBtn').disabled = true;
 
-if (typeof window.saveResult === "function") {
+if (window.saveResult) {
+  console.log("🚀 Sending to Supabase...");
   window.saveResult(scoreText);
 } else {
-  console.error("saveResult not ready");
-});
-
-// Copy / download
+  console.error("❌ saveResult missing — Supabase not initialized");
+}// Copy / download
 setupCopyDownload(
   document.getElementById('scrambleScoreOutput'),
   document.getElementById('scrambleCopyBtn'),
