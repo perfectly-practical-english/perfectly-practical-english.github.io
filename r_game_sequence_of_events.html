@@ -831,7 +831,7 @@ function getSectionName() {
 
   function buildScoreString() {
     const tiles = [...document.querySelectorAll(".tile")];
-    if (!tiles.length || !(window.activeSectionText || "").trim()) {
+if (!tiles.length) {
   return null;
 }
 
