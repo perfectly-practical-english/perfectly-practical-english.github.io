@@ -415,8 +415,8 @@ window.addEventListener("sectionchange", async (e) => {
   if (!index || index === 0 || !text || !text.trim()) return;
 
   // 🔒 lock in the selected section
-  window.activeSectionIndex = index;
-  activeSectionText  = text;
+window.activeSectionIndex = index;
+window.activeSectionText = text;
 
   buildGame();
 });
