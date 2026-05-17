@@ -1209,7 +1209,7 @@ submitButton.addEventListener('click', () => {
   const filename = window.location.pathname.split('/').pop() || 'unknown.html';
 
 // --- Count correct answers (CURRENT SECTION ONLY) ---
-if (currentSectionIndex === -1) {
+if (currentSectionIndex === -1 || !sections[currentSectionIndex]) {
   alert("No section selected.");
   return;
 }
@@ -1696,14 +1696,14 @@ const supabaseClient = createClient(  'https://etwwriloppklhhkmswpr.supabase.co'
 
 console.log("✅ Supabase initialized:", supabaseClient);
 
-let lastUploadedScore = null;
+let lastUploadedHash = null;
 
 window.saveResult = async function saveResult(text) {
 
-  if (!supabaseClient) {
-    console.error("❌ No Supabase client");
-    return;
-  }
+if (!supabaseClient || typeof supabaseClient.from !== "function") {
+  console.error("❌ Supabase client not properly initialized");
+  return;
+}
 
   // ======================
   // NORMALIZE INPUT
@@ -1736,7 +1736,7 @@ window.saveResult = async function saveResult(text) {
 
   console.log("📤 INSERTING INTO scoreboard_raw:", cleaned);
 
-const { data, error, status, statusText } = await supabaseClient
+const { data, error } = await supabaseClient
   .from("scoreboard_raw")
   .insert([
     { result_text: cleaned }
@@ -1752,8 +1752,6 @@ if (error) {
   console.error("Full error object:", error);
   return;
 }
-
-console.log("✅ INSERT SUCCESS:", data);
 
   console.log("✅ INSERT SUCCESS:", data);
 };
