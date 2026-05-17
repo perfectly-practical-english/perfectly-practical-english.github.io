@@ -311,6 +311,26 @@
 
 <script>
 
+
+  // Data
+
+// 🔌 Shell ↔ Scramble adapter
+const playerNameInput =
+  document.getElementById('playerName') ||
+  document.getElementById('scrambleName');
+
+const playerIdInput =
+  document.getElementById('playerID') ||
+  document.getElementById('scrambleId');
+
+const scoreboard =
+  document.getElementById('scrambleScoreOutput') ||
+  document.getElementById('scoreboard');
+let activeSectionText = "";
+
+</script>
+<script>
+
 document.getElementById("startBtn").addEventListener("click", () => {
   const index = window.getSelectedSectionIndex();
 
@@ -391,11 +411,10 @@ window.addEventListener("sectionchange", async (e) => {
   const index = e.detail?.index;
   const text  = e.detail?.text;
 
-  if (index === undefined || index === null) return;
-if (!text || !text.trim()) return;
+  if (!index || index === 0 || !text || !text.trim()) return;
 
   // 🔒 lock in the selected section
-  window.activeSectionIndex = index;
+  activeSectionIndex = index;
   activeSectionText  = text;
 
   buildGame();
@@ -435,7 +454,8 @@ div.style.pointerEvents = 'auto';
   container.appendChild(div);
 });
 
-document.getElementById('submitBtn')?.disabled = false;  document.getElementById('scoreboard')?.style?.setProperty('display', 'none');
+  document.getElementById('scrambleSubmitBtn').disabled = false;
+  document.getElementById('scrambleScoreboard').style.display = 'none';
 }
 
 // 🔁 Click-to-swap
@@ -474,38 +494,6 @@ function shuffle(arr) {
 }
 
 
-// ✅ Submit
-// ✅ Submit
-// handled by scoreboard module below
-// 📋 Copy
-document.getElementById('copyScore')?.addEventListener('click', () => {
-  if (!scoreboard.textContent) return;
-
-  navigator.clipboard.writeText(scoreboard.textContent);
-  alert('Score copied!');
-});
-// 📄 TXT
-document.getElementById('downloadTxt')?.addEventListener('click', () => {
-  if (!scoreboard.textContent) return;
-
-  const blob = new Blob([scoreboard.textContent], { type: 'text/plain' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'score.txt';
-  a.click();
-});
-
-// 🖼 PNG
-document.getElementById('downloadPng')?.addEventListener('click', () => {
-  if (!scoreboard.textContent || !window.html2canvas) return;
-
-  html2canvas(scoreboard).then(canvas => {
-    const a = document.createElement('a');
-    a.href = canvas.toDataURL('image/png');
-    a.download = 'score.png';
-    a.click();
-  });
-});
 </script>
 
 <script>
@@ -837,7 +825,7 @@ selectSection(0, false);
 
   function buildScoreString() {
     const tiles = [...document.querySelectorAll(".tile")];
-    if (!tiles.length) return "";
+    if (!tiles.length) return null; // REAL start condition
 
     let correct = 0;
     const total = tiles.length;
@@ -876,21 +864,17 @@ selectSection(0, false);
       return;
     }
 
-scoreboard.textContent = dataString;
-scoreboard.style.display = "block";
-scoreboard.style.visibility = "visible";
-scoreboard.style.opacity = "1";
+    scoreboard.textContent = dataString;
+    scoreboard.style.display = "block";
 
-if (scoreBtns) scoreBtns.style.display = "flex";
+    if (scoreBtns) scoreBtns.style.display = "flex";
 
     document.querySelectorAll(".tile").forEach(t => {
       t.style.pointerEvents = "none";
     });
 
-if (typeof saveToSupabase === "function") {
-  requestAnimationFrame(() => saveToSupabase(dataString));
-}
-});
+    requestAnimationFrame(() => saveToSupabase(dataString));
+  });
 
   /* ===============================
      DOWNLOAD / COPY
