@@ -1248,8 +1248,10 @@ sec.lines.forEach((line, lIdx) => {
   const resultText = `${filename}|${name}|${id}|${dateString}|${correctCount}/${total}|${percentage}%`;
 
   // --- Show on scoreboard ---
-  scoreData.textContent = resultText;
-  scoreboard.style.display = 'block';
+scoreData.textContent = resultText;
+scoreboard.style.display = 'block';
+
+saveResult(resultText);
 });
 
 copyButton.addEventListener('click', ()=>{ navigator.clipboard.writeText(scoreData.textContent).then(()=>alert('Copied to clipboard')); });
