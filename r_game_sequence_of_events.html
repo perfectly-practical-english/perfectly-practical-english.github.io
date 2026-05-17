@@ -732,7 +732,10 @@ window.getSelectedSectionIndex = function () {
 };
 
 window.selectSectionByIndex = function (index) {
-  if (!index || index === 0) return;
+
+  index = Number(index);
+
+  if (index <= 0 || !sections[index]) return;
 
   // 🔥 FORCE section open
   const section = sections[index];
@@ -745,7 +748,6 @@ window.selectSectionByIndex = function (index) {
     }
   }));
 };
-
 
 
 // 🔑 START ON PLACEHOLDER VISUALLY, BUT ALLOW SELECTION
