@@ -326,7 +326,7 @@ const playerIdInput =
 const scoreboard =
   document.getElementById('scrambleScoreOutput') ||
   document.getElementById('scoreboard');
-let activeSectionText = "";
+window.activeSectionText = "";
 
 </script>
 <script>
@@ -426,7 +426,7 @@ async function buildGame() {
   container.innerHTML = "";
   selected = null;
 
-  const raw = activeSectionText;
+const raw = window.activeSectionText;
 
   sentences = raw
     .trim()
@@ -816,8 +816,8 @@ selectSection(0, false);
   }
 
   function getSectionName() {
-    return window.activeSectionText
-      ? window.activeSectionText.split("\n")[0].trim()
+return window.activeSectionText
+  ? window.activeSectionText.split("\n")[0].trim()
       : document.querySelector("section h3")?.textContent.trim()
       || "Unknown Section";
   }
@@ -1279,50 +1279,7 @@ window.addEventListener("resize", adjustBodyPadding);
 })();
 </script>
 
-<script>
-(function () {
 
-  const scoreboard = document.getElementById("scoreboard");
-  const submitBtn = document.getElementById("submitBtn");
-
-  if (!scoreboard || !submitBtn) {
-    console.warn("FORCE SCOREBOARD: missing elements");
-    return;
-  }
-
-  // FORCE visible styling
-  Object.assign(scoreboard.style, {
-    display: "block",
-    visibility: "visible",
-    opacity: "1",
-    minHeight: "40px",
-    border: "2px solid red",
-    padding: "10px",
-    marginTop: "10px",
-    background: "#fff",
-    color: "#000",
-    whiteSpace: "pre-wrap",
-    position: "relative",
-    zIndex: "99999"
-  });
-
-  submitBtn.addEventListener("click", () => {
-
-    setTimeout(() => {
-
-      scoreboard.textContent =
-        "TEST SCOREBOARD WORKING";
-
-      scoreboard.style.display = "block";
-
-      console.log("FORCED SCOREBOARD SUCCESS");
-
-    }, 50);
-
-  });
-
-})();
-</script>
 
 </body>
 </html>
