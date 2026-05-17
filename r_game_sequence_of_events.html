@@ -312,6 +312,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const startBtn = document.getElementById("startBtn");
 
   startBtn.addEventListener("click", () => {
+
     const index = window.getSelectedSectionIndex?.();
 
     if (index == null || Number(index) === 0) {
@@ -320,15 +321,15 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (typeof window.selectSectionByIndex !== "function") {
-      console.error("selectSectionByIndex not ready yet");
       alert("Game not ready yet. Refresh the page.");
       return;
     }
 
+    // 🔥 IMPORTANT: trigger real pipeline
     window.selectSectionByIndex(index);
+    window.fireSelectedSection?.(); // <-- THIS was missing on GitHub
   });
 });
-
 </script>
 
 <script>
