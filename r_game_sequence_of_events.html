@@ -411,7 +411,8 @@ window.addEventListener("sectionchange", async (e) => {
   const index = e.detail?.index;
   const text  = e.detail?.text;
 
-  if (!index || index === 0 || !text || !text.trim()) return;
+  if (index === undefined || index === null) return;
+if (!text || !text.trim()) return;
 
   // 🔒 lock in the selected section
   window.activeSectionIndex = index;
