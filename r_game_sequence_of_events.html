@@ -511,11 +511,26 @@ function getScoreOutput() {
 }
 
 // ✅ Submit
-document.getElementById('scrambleSubmitBtn').addEventListener('click', () => {
-  const out = getScoreOutput();
-  document.getElementById('scrambleScoreOutput').textContent = out;
-  document.getElementById('scrambleScoreboard').style.display = 'block';
+document.getElementById('submitBtn').addEventListener('click', () => {
+  const out = buildScoreString();
+  if (!out) {
+    alert("Start the game first.");
+    return;
+  }
 
+  scoreboard.textContent = out;
+  scoreboard.style.display = 'block';
+
+  document.getElementById('scoreButtons').style.display = 'flex';
+
+  document.querySelectorAll('.tile').forEach(t => {
+    t.style.pointerEvents = 'none';
+  });
+
+  requestAnimationFrame(() => {
+    if (typeof saveToSupabase === "function") saveToSupabase(out);
+  });
+});
   document.getElementById('scrambleSubmitBtn').disabled = true;
 
 container.querySelectorAll('.tile').forEach(t => {
@@ -881,9 +896,11 @@ selectSection(0, false);
      CANONICAL SCORE STRING
      =============================== */
 
-  function buildScoreString() {
-    const tiles = [...document.querySelectorAll(".tile")];
-    if (!tiles.length) return "";
+function buildScoreString() {
+  const tiles = [...document.querySelectorAll(".tile")];
+
+  // HARD GUARD: no game = no scoreboard
+  if (!tiles.length || !sentences.length) return "";
 
     let correct = 0;
     const total = tiles.length;
@@ -915,7 +932,7 @@ selectSection(0, false);
      SUBMIT (NON-DESTRUCTIVE)
      =============================== */
 
-  submitBtn.addEventListener("click", () => {
+  document.getElementById("submitBtn")?.addEventListener("click", () => {
     const dataString = buildScoreString();
     if (!dataString) {
       alert("Start the game first.");
@@ -923,10 +940,13 @@ selectSection(0, false);
     }
 
 scoreboard.textContent = dataString;
-scoreboard.style.display = "block";
-scoreboard.style.visibility = "visible";
-scoreboard.style.opacity = "1";
 
+Object.assign(scoreboard.style, {
+  display: "block",
+  visibility: "visible",
+  opacity: "1",
+  whiteSpace: "normal"
+});
 if (scoreBtns) scoreBtns.style.display = "flex";
 
     document.querySelectorAll(".tile").forEach(t => {
