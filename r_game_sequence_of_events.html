@@ -922,10 +922,12 @@ selectSection(0, false);
       return;
     }
 
-    scoreboard.textContent = dataString;
-    scoreboard.style.display = "block";
+scoreboard.textContent = dataString;
+scoreboard.style.display = "block";
+scoreboard.style.visibility = "visible";
+scoreboard.style.opacity = "1";
 
-    if (scoreBtns) scoreBtns.style.display = "flex";
+if (scoreBtns) scoreBtns.style.display = "flex";
 
     document.querySelectorAll(".tile").forEach(t => {
       t.style.pointerEvents = "none";
