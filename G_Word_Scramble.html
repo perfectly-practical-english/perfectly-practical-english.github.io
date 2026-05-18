@@ -2011,7 +2011,6 @@ document.getElementById('scrambleSubmitBtn').addEventListener('click', async () 
 
 await window.saveResult(scoreText);
 
-await window.saveResult(scoreText);
 window.scrambleSubmitted = true;
 document.getElementById('scrambleSubmitBtn').disabled = true;
 
@@ -2939,23 +2938,24 @@ window.addEventListener("resize", adjustBodyPadding);
 
 <script>
 
-const supabaseClient = window.supabase?.createClient(
-  'https://etwwriloppklhhkmswpr.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV0d3dyaWxvcHBrbGhoa21zd3ByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NDM3NTcsImV4cCI6MjA5NDExOTc1N30.rmquTqYW6WqS7jZUbHM_gWecka3jkiWzYb14eJ10hpQ'
-);
+let supabaseClient = null;
 
-if (!supabaseClient) {
-  console.error("❌ Supabase failed to initialize");
-}
-
-window.lastUploadedScore = null;
-
-window.saveResult = async function saveResult(text) {
-
-  if (!supabaseClient) {
-    console.error("❌ No Supabase client");
-    return;
+try {
+  if (!window.supabase || !window.supabase.createClient) {
+    throw new Error("Supabase library not loaded");
   }
+
+  supabaseClient = window.supabase.createClient(
+    'https://etwwriloppklhhkmswpr.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV0d3dyaWxvcHBrbGhoa21zd3ByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NDM3NTcsImV4cCI6MjA5NDExOTc1N30.rmquTqYW6WqS7jZUbHM_gWecka3jkiWzYb14eJ10hpQ'
+  );
+
+  console.log("✅ Supabase client initialized:", !!supabaseClient);
+
+} catch (err) {
+  console.error("❌ Supabase init failed:", err);
+  supabaseClient = null;
+}
 
   let cleaned;
 
@@ -2976,12 +2976,12 @@ window.saveResult = async function saveResult(text) {
     return;
   }
 
-  if (cleaned === lastUploadedScore) {
+  if (cleaned === window.lastUploadedScore) {
     console.log("⚠️ Duplicate blocked");
     return;
   }
 
-  lastUploadedScore = cleaned;
+  window.lastUploadedScore = cleaned;
 
   console.log("📤 INSERTING:", cleaned);
 
