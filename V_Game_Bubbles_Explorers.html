@@ -1664,11 +1664,8 @@ const dateStr =
     const scoreLine =
   `${currentFile}|${activeSectionName}|${nameInput.value.trim()}|${idInput.value.trim()}|${dateStr}|${correctWords}/${totalWords}|${pct}%`;
 
-scoreboardContainer.textContent = scoreLine;
-scoreButtons.style.display = 'flex';
-
-if (window.saveResult) {
-  window.saveResult(scoreLine);
+    scoreboardContainer.textContent = scoreLine;
+    scoreButtons.style.display = 'flex';
 }
   startBtn.addEventListener('click', startGame);
   submitBtn.addEventListener('click', submitResults);
@@ -1682,18 +1679,20 @@ if (window.saveResult) {
 })();
 </script>
 
-<script>
-  // Green border
-  const borderDiv = document.createElement('div');
-  borderDiv.style.position='fixed';
-  borderDiv.style.inset='0';
-  borderDiv.style.border='10px solid #39FF14';
-  borderDiv.style.boxSizing='border-box';
-  borderDiv.style.zIndex='9999';
-  borderDiv.style.pointerEvents='none';
-  borderDiv.style.backgroundColor='transparent';
-  document.body.appendChild(borderDiv);
-</script>
+
+
+  <script>
+    // Green border
+    const borderDiv = document.createElement('div');
+    borderDiv.style.position = 'fixed';
+    borderDiv.style.inset = '0';
+    borderDiv.style.border = '10px solid #39FF14';
+    borderDiv.style.boxSizing = 'border-box';
+    borderDiv.style.zIndex = '9999';
+    borderDiv.style.pointerEvents = 'none';
+    borderDiv.style.backgroundColor = 'transparent';
+    document.body.appendChild(borderDiv);
+  </script>
 
 <script>
 (async function() {
@@ -1722,32 +1721,47 @@ if (window.saveResult) {
 
   // Convert scoreboard to PNG using html2canvas
   async function downloadScoreAsPNG(text, filename) {
-    const wrapper = document.createElement('div');
-    wrapper.innerHTML = text.replace(/\n/g, '<br>');
-    wrapper.style.whiteSpace = 'pre-wrap';
-    wrapper.style.fontFamily = 'monospace';
-    wrapper.style.padding = '10px';
-    wrapper.style.backgroundColor = '#fff';
-    wrapper.style.color = '#000';
-    document.body.appendChild(wrapper);
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = text.replace(/\n/g, '<br>');
 
-    try {
-      if (!window.html2canvas) {
-        const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
-        document.head.appendChild(script);
-        await new Promise(res => script.onload = res);
-      }
-      const canvas = await html2canvas(wrapper, { scale: 2, backgroundColor: '#fff' });
-      const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
-      downloadBlob(blob, filename);
-    } catch (err) {
-      console.error(err);
-      alert('PNG download failed');
-    } finally {
-      wrapper.remove();
+  /* MATCH SCOREBOARD APPEARANCE */
+  wrapper.style.display = 'inline-block';
+  wrapper.style.whiteSpace = 'pre-wrap';
+  wrapper.style.fontFamily = 'monospace';
+  wrapper.style.fontWeight = 'bold';
+  wrapper.style.fontSize = '18px';
+  wrapper.style.lineHeight = '1.2';
+  wrapper.style.padding = '6px 8px';
+  wrapper.style.backgroundColor = '#fff';
+  wrapper.style.color = '#000';
+
+  document.body.appendChild(wrapper);
+
+  try {
+    if (!window.html2canvas) {
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+      document.head.appendChild(script);
+      await new Promise(res => script.onload = res);
     }
+
+    const canvas = await html2canvas(wrapper, {
+      scale: 2,
+      backgroundColor: '#fff',
+      width: wrapper.offsetWidth,
+      height: wrapper.offsetHeight
+    });
+
+    const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+    downloadBlob(blob, filename);
+  } catch (err) {
+    console.error(err);
+    alert('PNG download failed');
+  } finally {
+    wrapper.remove();
   }
+}
+
 
   // Hijack a download button
   function hijackDownloadButton(button, getScoreText, getFilename, isText) {
@@ -1798,11 +1812,6 @@ if (window.saveResult) {
 
 })();
 </script>
-
-
-
-
-
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
@@ -2113,9 +2122,6 @@ window.addEventListener("resize", adjustBodyPadding);
 })();
 </script>
 
-<script src="/supabase-ingest.js"></script>
-
-
 <!-- SUPABASE LIBRARY -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -2189,7 +2195,6 @@ window.saveResult = async function saveResult(text) {
 
 </body>
 </html>
-
 
 
 
