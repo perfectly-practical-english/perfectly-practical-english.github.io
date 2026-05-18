@@ -123,13 +123,15 @@
 }
 .blank {
   display: inline-block;
-  min-width: 2ch;
+  min-width: 50px;
   padding: 0 6px;
-  border-bottom: 6px solid rgba(0, 0, 0, 0.12); /* Change to solid line */
+  border-bottom: 2px solid #999;
   color: red;
   font-weight: 700;
   letter-spacing: 0.02em;
+  vertical-align: middle;
 }
+
     .emoji {
       min-width: 34px;
       text-align: center;
@@ -171,12 +173,6 @@
       background: #2563eb;
     }
 
-.blank {
-  display: inline-block;
-  width: 50px;         /* adjust the length of the blank */
-  border-bottom: 1px solid #999;  /* thin grey line */
-  vertical-align: middle;
-}
 
 /* Footer styles */
 #copyrightSection {
@@ -215,10 +211,7 @@
 }
 
 /* Selector field behaves like an input */
-.formRow >
-
-#sectionWheelContainer {
-  flex: 1 1 auto;
+.formRow > #sectionWheelContainer {  flex: 1 1 auto;
   min-width: 0;
   height: 38px;
   position: relative;
@@ -310,41 +303,43 @@
 
 
 <script>
-
-
-  // Data
-
-// 🔌 Shell ↔ Scramble adapter
-const playerNameInput =
-  document.getElementById('playerName') ||
-  document.getElementById('scrambleName');
-
-const playerIdInput =
-  document.getElementById('playerID') ||
-  document.getElementById('scrambleId');
-
-const scoreboard =
-  document.getElementById('scrambleScoreOutput') ||
-  document.getElementById('scoreboard');
-let activeSectionText = "";
-
+window.activeSectionText = "";
+window.activeSectionIndex = 0;
 </script>
 <script>
 
-document.getElementById("startBtn").addEventListener("click", () => {
-  const index = window.getSelectedSectionIndex();
+document.addEventListener("DOMContentLoaded", () => {
+  const startBtn = document.getElementById("startBtn");
 
-  if (!index || index === 0) {
-    alert("Select a topic first.");
-    return;
-  }
+  startBtn.addEventListener("click", () => {
 
-  window.selectSectionByIndex(index);
-});
+    const index = window.getSelectedSectionIndex?.();
 
+    if (index == null || Number(index) === 0) {
+      alert("Select a topic first.");
+      return;
+    }
 
+    // 🔥 Get real section data directly (NO event system)
+    const section = sectionSource?.[index - 1];
 
-</script>
+    if (!section || !section.text) {
+      alert("Section not found.");
+      return;
+    }
+
+    // 🔥 FORCE STATE
+    window.activeSectionIndex = index;
+    window.activeSectionText = section.text;
+
+    // 🔥 BUILD GAME DIRECTLY (bypasses broken pipeline)
+    if (typeof buildGame === "function") {
+      buildGame();
+    } else {
+      alert("Game not ready yet. Refresh the page.");
+    }
+  });
+});</script>
 
 <script>
 
@@ -411,11 +406,16 @@ window.addEventListener("sectionchange", async (e) => {
   const index = e.detail?.index;
   const text  = e.detail?.text;
 
-  if (!index || index === 0 || !text || !text.trim()) return;
+  if (
+  index == null ||
+  Number(index) === 0 ||
+  !text ||
+  !text.trim()
+) return;
 
   // 🔒 lock in the selected section
-  activeSectionIndex = index;
-  activeSectionText  = text;
+window.activeSectionIndex = index;
+window.activeSectionText = text;
 
   buildGame();
 });
@@ -426,7 +426,12 @@ async function buildGame() {
   container.innerHTML = "";
   selected = null;
 
-  const raw = activeSectionText;
+const raw = window.activeSectionText || "";
+
+if (!raw.trim()) {
+  alert("Select a section first.");
+  return;
+}
 
   sentences = raw
     .trim()
@@ -448,14 +453,19 @@ shuffled.forEach(text => {
   `;
 
 div.style.pointerEvents = 'auto';
+div.style.background = "#e0f2fe";
+div.classList.remove("correct");
 
 
   div.addEventListener('click', () => handleTileClick(div));
   container.appendChild(div);
 });
 
-  document.getElementById('scrambleSubmitBtn').disabled = false;
-  document.getElementById('scrambleScoreboard').style.display = 'none';
+const submitBtn = document.getElementById('submitBtn');
+const scoreboard = document.getElementById('scoreboard');
+
+if (submitBtn) submitBtn.disabled = false;
+if (scoreboard) scoreboard.style.display = 'none';
 }
 
 // 🔁 Click-to-swap
@@ -479,7 +489,6 @@ const tmp = s1.textContent;
 s1.textContent = s2.textContent;
 s2.textContent = tmp;
 
-
   selected.classList.remove('selected');
   selected = null;
 }
@@ -493,70 +502,7 @@ function shuffle(arr) {
   return arr;
 }
 
-// 🧮 Score output
-function getScoreOutput() {
-  const tiles = [...container.querySelectorAll('.tile')];
 
-  let score = 0;
-  tiles.forEach((tile, i) => {
-    if (tile.textContent === sentences[i]) score++;
-  });
-
-  const name = document.getElementById('scrambleName').value.trim();
-  const id = document.getElementById('scrambleId').value.trim();
-  const percent = ((score / sentences.length) * 100).toFixed(1);
-  const date = new Date().toLocaleString('en-GB', { hour12: false });
-
-  return `Name: ${name} | ID: ${id} | Date: ${date} | Score: ${score}/${sentences.length} (${percent}%)`;
-}
-
-// ✅ Submit
-document.getElementById('scrambleSubmitBtn').addEventListener('click', () => {
-  const out = getScoreOutput();
-  const outputEl = document.getElementById('scrambleScoreOutput');
-
-  outputEl.textContent = out;
-  document.getElementById('scrambleScoreboard').style.display = 'block';
-
-  document.getElementById('scrambleSubmitBtn').disabled = true;
-
-  container.querySelectorAll('.tile').forEach(t => {
-    t.style.pointerEvents = 'none';
-  });
-
-  // ✅ SEND TO SUPABASE (non-blocking, standalone untouched)
-  setTimeout(() => {
-    window.saveResult?.(out);
-  }, 0);
-});
-
-// 📋 Copy
-document.getElementById('scrambleCopyBtn').addEventListener('click', () => {
-  navigator.clipboard.writeText(
-    document.getElementById('scrambleScoreOutput').textContent
-  );
-  alert('Score copied!');
-});
-
-// 📄 TXT
-document.getElementById('scrambleDownloadTextBtn').addEventListener('click', () => {
-  const text = document.getElementById('scrambleScoreOutput').textContent;
-  const blob = new Blob([text], { type: 'text/plain' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'scramble_score.txt';
-  a.click();
-});
-
-// 🖼 PNG
-document.getElementById('scrambleDownloadPngBtn').addEventListener('click', () => {
-  html2canvas(document.getElementById('scrambleScoreOutput')).then(canvas => {
-    const a = document.createElement('a');
-    a.href = canvas.toDataURL('image/png');
-    a.download = 'scramble_score.png';
-    a.click();
-  });
-});
 </script>
 
 <script>
@@ -619,7 +565,7 @@ sections = [
 
 
   /* ---------- BUILD UI ---------- */
-  const container = document.getElementById("sectionWheelContainer");
+  const wheelContainer = document.getElementById("sectionWheelContainer");
 
 
 // ▲ / ▼ BUTTONS
@@ -633,7 +579,7 @@ btnUp.addEventListener("click", () => {
 btnDown.addEventListener("click", () => {
   selectSection(sectionIndex + 1, true);
 });
-  container.style.cssText = `
+  wheelContainer.style.cssText = `
     position: relative;
     height: ${ITEM_HEIGHT}px;
     overflow: hidden;
@@ -679,7 +625,7 @@ item.addEventListener("click", () => {
     wheel.appendChild(item);
   });
 
-  container.appendChild(wheel);
+  wheelContainer.appendChild(wheel);
 
 
 
@@ -734,12 +680,21 @@ function snap() {
 
 
 
-function selectSection(index) {
-  sectionIndex = Math.max(0, Math.min(sections.length - 1, index));
-  offset = -sectionIndex * ITEM_HEIGHT;
-  snap();
-}
+function selectSection(index, fire = false) {
 
+  sectionIndex = Math.max(
+    0,
+    Math.min(sections.length - 1, Number(index))
+  );
+
+  offset = -sectionIndex * ITEM_HEIGHT;
+
+  snap();
+
+  if (fire && sectionIndex !== 0) {
+    fireSectionChange();
+  }
+}
 
 
 
@@ -764,15 +719,15 @@ function selectSection(index) {
     snap(true);
   }
 
-  container.addEventListener("mousedown", e => start(e.clientY));
+  wheelContainer.addEventListener("mousedown", e => start(e.clientY));
   window.addEventListener("mousemove", e => move(e.clientY));
   window.addEventListener("mouseup", end);
 
-  container.addEventListener("touchstart", e => start(e.touches[0].clientY), { passive: true });
-  container.addEventListener("touchmove", e => move(e.touches[0].clientY), { passive: true });
-  container.addEventListener("touchend", end);
+  wheelContainer.addEventListener("touchstart", e => start(e.touches[0].clientY), { passive: true });
+  wheelContainer.addEventListener("touchmove", e => move(e.touches[0].clientY), { passive: true });
+  wheelContainer.addEventListener("touchend", end);
 
-container.addEventListener("wheel", e => {
+wheelContainer.addEventListener("wheel", e => {
   e.preventDefault();
 
   if (e.deltaY > 0) {
@@ -797,10 +752,16 @@ window.getSelectedSectionIndex = function () {
 };
 
 window.selectSectionByIndex = function (index) {
-  if (!index || index === 0) return;
 
-  // 🔥 FORCE section open
+  index = Number(index);
+
+  if (index <= 0 || !sections[index]) return;
+
   const section = sections[index];
+
+  // 🔥 CRITICAL: set globals immediately (THIS IS WHAT WAS MISSING)
+  window.activeSectionIndex = index;
+  window.activeSectionText = section.text;
 
   window.dispatchEvent(new CustomEvent("sectionchange", {
     detail: {
@@ -810,24 +771,20 @@ window.selectSectionByIndex = function (index) {
     }
   }));
 };
-
-
-
 // 🔑 START ON PLACEHOLDER VISUALLY, BUT ALLOW SELECTION
 selectSection(0, false);
 
 })();
 </script>
 
-<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
 
 
 
 <script>
-(async function () {
+document.addEventListener("DOMContentLoaded", () => {
   'use strict';
-
   /* ===============================
      HARD GUARDS
      =============================== */
@@ -875,68 +832,102 @@ selectSection(0, false);
     );
   }
 
-  function getSectionName() {
-    return window.activeSectionText
-      ? window.activeSectionText.split("\n")[0].trim()
-      : document.querySelector("section h3")?.textContent.trim()
-      || "Unknown Section";
+function getSectionName() {
+  const index = window.activeSectionIndex || 0;
+
+  if (
+    typeof sectionSource !== "undefined" &&
+    sectionSource[index - 1]
+  ) {
+    return sectionSource[index - 1].label;
   }
 
+  return "Unknown Section";
+}
   /* ===============================
      CANONICAL SCORE STRING
      =============================== */
 
-  function buildScoreString() {
-    const tiles = [...document.querySelectorAll(".tile")];
-    if (!tiles.length) return null; // REAL start condition
+function buildScoreString() {
+  const tiles = [...document.querySelectorAll(".tile")];
 
-    let correct = 0;
-    const total = tiles.length;
+  if (!tiles.length) return null;
 
-    tiles.forEach(tile => {
-      if (
-        tile.classList.contains("correct") ||
-        tile.dataset.correct === "true" ||
-        tile.getAttribute("aria-correct") === "true"
-      ) {
-        correct++;
-      }
-    });
+  const raw = window.activeSectionText;
 
-    const percent = Math.round((correct / total) * 100);
+  if (!raw) return "NO SECTION DATA";
 
-    return [
-      getFilename(),
-      getSectionName(),
-      nameInput?.value.trim() || "",
-      idInput?.value.trim() || "",
-      intlTimestamp(),
-      `${correct}/${total}`,
-      `${percent}%`
-    ].join("|");
-  }
+  const correctOrder = raw
+    .split("\n")
+    .map(s => s.trim())
+    .filter(Boolean);
 
+  let correct = 0;
+  const total = tiles.length;
+
+  tiles.forEach((tile, i) => {
+    const current = tile.querySelector(".sentence")?.textContent.trim();
+    const expected = correctOrder[i];
+
+    if (current === expected) {
+      correct++;
+      tile.classList.add("correct");
+      tile.style.background = "#bbf7d0";
+    } else {
+      tile.style.background = "#fecaca";
+    }
+  });
+
+  const percent = total ? Math.round((correct / total) * 100) : 0;
+
+  return [
+    getFilename(),
+    getSectionName(),
+    nameInput?.value.trim() || "",
+    idInput?.value.trim() || "",
+    intlTimestamp(),
+    `${correct}/${total}`,
+    `${percent}%`
+  ].join("|");
+}
   /* ===============================
      SUBMIT (NON-DESTRUCTIVE)
      =============================== */
 
-  submitBtn.addEventListener("click", () => {
-    const dataString = buildScoreString();
-    if (!dataString) {
-      alert("Start the game first.");
-      return;
-    }
+submitBtn.addEventListener("click", () => {
+  console.log("GAME OVER");
 
-    scoreboard.textContent = dataString;
-    scoreboard.style.display = "block";
+  const tiles = document.querySelectorAll(".tile");
 
-    if (scoreBtns) scoreBtns.style.display = "flex";
+if (!tiles.length) {
+  return "NO TILES FOUND";
+}
+  // Optional: still try to build score, but NEVER block game over
+  const dataString = buildScoreString();
 
-    document.querySelectorAll(".tile").forEach(t => {
-      t.style.pointerEvents = "none";
-    });
+scoreboard.textContent = dataString;
 
-  });
+// 🔥 HARD FORCE VISIBILITY (overrides any CSS edge cases)
+scoreboard.style.cssText = `
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  height: auto !important;
+  border-top: 2px solid #e2e8f0;
+  padding-top: 8px;
+  white-space: pre-line;
+  font-family: monospace;
+  font-size: 0.95rem;
+  color: #0f172a;
+`;
+if (scoreBtns) scoreBtns.style.display = "flex";
+
+tiles.forEach(t => {
+  t.style.pointerEvents = "none";
+});
+
+submitBtn.disabled = true;
+});
 
   /* ===============================
      DOWNLOAD / COPY
@@ -952,8 +943,9 @@ selectSection(0, false);
 
   document.getElementById("copyScore")?.addEventListener("click", () => {
     if (!scoreboard.textContent) return;
-    navigator.clipboard.writeText(scoreboard.textContent);
-    alert("Score copied!");
+navigator.clipboard?.writeText(scoreboard.textContent)
+  .then(() => alert("Score copied!"))
+  .catch(() => alert("Clipboard blocked"));
   });
 
   document.getElementById("downloadTxt")?.addEventListener("click", () => {
@@ -1003,6 +995,7 @@ document.getElementById("downloadPng")?.addEventListener("click", async () => {
   }
 });
 
+});
 </script>
 
 
@@ -1329,76 +1322,7 @@ window.addEventListener("resize", adjustBodyPadding);
 })();
 </script>
 
-<!-- SUPABASE LIBRARY -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<script>
-
-const supabaseClient = window.supabase?.createClient(
-  'https://etwwriloppklhhkmswpr.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV0d3dyaWxvcHBrbGhoa21zd3ByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NDM3NTcsImV4cCI6MjA5NDExOTc1N30.rmquTqYW6WqS7jZUbHM_gWecka3jkiWzYb14eJ10hpQ'
-);
-
-if (!supabaseClient) {
-  console.error("❌ Supabase failed to initialize");
-}
-
-let lastUploadedScore = null;
-
-window.saveResult = async function saveResult(text) {
-
-  if (!supabaseClient) {
-    console.error("❌ No Supabase client");
-    return;
-  }
-
-  // ======================
-  // NORMALIZE INPUT
-  // ======================
-  let cleaned;
-
-  try {
-    cleaned = (typeof text === "string")
-      ? text
-      : JSON.stringify(text);
-
-    cleaned = cleaned.replace(/\s+/g, " ").trim();
-
-  } catch (err) {
-    console.error("❌ Normalize error:", err);
-    return;
-  }
-
-  if (!cleaned) {
-    console.error("❌ Empty value blocked");
-    return;
-  }
-
-  if (cleaned === lastUploadedScore) {
-    console.log("⚠️ Duplicate blocked");
-    return;
-  }
-
-  lastUploadedScore = cleaned;
-
-  console.log("📤 INSERTING INTO scoreboard_raw:", cleaned);
-
-  const { data, error } = await supabaseClient
-    .from("scoreboard_raw")
-    .insert([
-      { result_text: cleaned }
-    ])
-    .select();
-
-  if (error) {
-    console.error("❌ INSERT FAILED FULL ERROR:", error);
-    return;
-  }
-
-  console.log("✅ INSERT SUCCESS:", data);
-};
-
-</script>
 
 </body>
 </html>
