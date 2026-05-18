@@ -2009,7 +2009,7 @@ document.getElementById('scrambleSubmitBtn').addEventListener('click', async () 
   scoreOutput.textContent = scoreText;
   document.getElementById('scrambleScoreboard').style.display = 'block';
 
-await window.saveResult(scoreText);
+await window.saveResult(scoreText, id);
 
 window.scrambleSubmitted = true;
 document.getElementById('scrambleSubmitBtn').disabled = true;
@@ -2957,57 +2957,72 @@ try {
   supabaseClient = null;
 }
 
-async function saveResult(text) {
+
+/* =========================
+   SAVE RESULT (GLOBAL SAFE)
+   ========================= */
+
+window.saveResult = async function (text, id = null) {
+
   let cleaned;
 
   try {
-
     cleaned = String(text)
       .replace(/\s+/g, " ")
       .trim();
-
   } catch (err) {
-
     console.error("❌ Normalize error:", err);
     return;
   }
 
-  if (!cleaned) {
-    console.error("❌ Empty value blocked");
+  // HARD SAFETY GATE
+  if (!cleaned || !supabaseClient) {
+    console.error("❌ Blocked: empty value or Supabase not ready");
     return;
   }
 
-window.lastUploadedScore ||= "";
+  /* =========================
+     STRONG DEDUPE (single source of truth)
+     ========================= */
+  window.__lastUploadKey ||= "";
 
-if (cleaned === window.lastUploadedScore) {
-  console.log("⚠️ Duplicate blocked");
-  return;
-}
-window.lastUploadedScore = cleaned;
+  const uploadKey = cleaned;
+
+  if (uploadKey === window.__lastUploadKey) {
+    console.log("⚠️ Duplicate blocked");
+    return;
+  }
+
+  window.__lastUploadKey = uploadKey;
 
   console.log("📤 INSERTING:", cleaned);
 
+  /* =========================
+     SUPABASE INSERT
+     ========================= */
+  const { data, error } = await supabaseClient
+    .from("scoreboard_raw")
+    .insert([
+      {
+        result_text: cleaned,
+        student_id: id || null
+      }
+    ])
+    .select();
 
-const { data, error } = await supabaseClient
-.from("scoreboard_raw")
-.insert([
-  {
-    result_text: cleaned
+  if (error) {
+    console.error("❌ SUPABASE INSERT FAILED:", error.message, error);
+    window.lastSupabaseError = error;
+    return;
   }
-])
-.select();
 
-if (error) {
-  console.error("❌ UPDATE FAILED:", error);
-  return;
-}
-
-if (!data || data.length === 0) {
-  console.warn("⚠️ No matching row found to update");
-}
+  if (!data || data.length === 0) {
+    console.warn("⚠️ Insert succeeded but no row returned");
+  }
 
   console.log("✅ INSERT SUCCESS:", data);
 };
+
 </script>
 
 
