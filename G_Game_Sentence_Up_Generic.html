@@ -1481,21 +1481,30 @@ const section = sections[sectionIndex];
   }
 
 function snap(fireEvent = false) {
-  // 🔑 CALCULATE INDEX FROM OFFSET
-  const rawIndex = Math.round(-offset / ITEM_HEIGHT);
 
+  // derive selected row from current wheel position
+  sectionIndex = Math.round(-offset / ITEM_HEIGHT);
 
+  // clamp
+  sectionIndex = Math.max(
+    0,
+    Math.min(sections.length - 1, sectionIndex)
+  );
+
+  // snap wheel visually
   offset = -sectionIndex * ITEM_HEIGHT;
 
   wheel.style.transition = "transform 0.15s ease-out";
   update();
-  setTimeout(() => wheel.style.transition = "", 150);
+
+  setTimeout(() => {
+    wheel.style.transition = "";
+  }, 150);
 
   if (fireEvent) {
     fireSectionChange();
   }
 }
-
 
 function selectSection(index, fireEvent = true) {
 sectionIndex = Math.max(0, Math.min(sections.length - 1, index));
