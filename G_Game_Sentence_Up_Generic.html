@@ -2075,12 +2075,10 @@ window.saveResult = async function(text) {
     result_text: cleaned
   };
 
-  const response =
-    await supabaseClient
-      .from("scoreboard_raw")
-      .insert(payload)
-      .select();
-
+const response =
+  await supabaseClient
+    .from("scoreboard_raw")
+    .insert(payload);
   console.log("RAW RESPONSE:", response);
 
   if (response.error) {
