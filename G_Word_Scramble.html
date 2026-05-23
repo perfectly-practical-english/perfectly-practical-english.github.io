@@ -2009,11 +2009,23 @@ document.getElementById('scrambleSubmitBtn').addEventListener('click', async () 
   scoreOutput.textContent = scoreText;
   document.getElementById('scrambleScoreboard').style.display = 'block';
 
-await window.saveResult(scoreText, id);
+const scoreOutput = document.getElementById('scrambleScoreOutput');
+
+const finalScoreboardText =
+  (scoreOutput?.textContent || scoreText)
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const result = await window.saveResult(finalScoreboardText, id);
+
+if (!result || !result.ok) {
+  alert("Save failed. Not submitted.");
+  console.error("Submission blocked:", result);
+  return;
+}
 
 window.scrambleSubmitted = true;
 document.getElementById('scrambleSubmitBtn').disabled = true;
-
   // lock ONLY after successful Supabase save
 // document.getElementById('scrambleSubmitBtn').disabled = true;
 });
@@ -2967,6 +2979,45 @@ window.saveResult = async function (text, id = null) {
   let cleaned;
 
   try {
+    cleaned = String(text).replace(/\s+/g, " ").trim();
+  } catch (err) {
+    console.error("❌ Normalize error:", err);
+    return { ok: false, error: "normalize_failed" };
+  }
+
+  if (!cleaned || !supabaseClient) {
+    console.error("❌ Blocked: empty value or Supabase not ready");
+    return { ok: false, error: "client_not_ready" };
+  }
+
+  console.log("📤 INSERTING SCOREBOARD:", {
+    result_text: cleaned,
+    student_id: id || null
+  });
+
+  const { data, error } = await supabaseClient
+    .from("scoreboard_raw")
+    .insert([
+      {
+        result_text: cleaned,
+        student_id: id || null
+      }
+    ])
+    .select();
+
+  if (error) {
+    console.error("❌ SUPABASE INSERT FAILED:", error.message, error);
+    return { ok: false, error };
+  }
+
+  console.log("✅ INSERT SUCCESS:", data);
+
+  return { ok: true, data };
+};
+
+  let cleaned;
+
+  try {
     cleaned = String(text)
       .replace(/\s+/g, " ")
       .trim();
@@ -2984,18 +3035,11 @@ window.saveResult = async function (text, id = null) {
   /* =========================
      STRONG DEDUPE (single source of truth)
      ========================= */
-  window.__lastUploadKey ||= "";
-
-  const uploadKey = cleaned;
-
-  if (uploadKey === window.__lastUploadKey) {
-    console.log("⚠️ Duplicate blocked");
-    return;
-  }
-
-  window.__lastUploadKey = uploadKey;
-
-  console.log("📤 INSERTING:", cleaned);
+const uploadKey = cleaned + "|" + Date.now();
+  console.log("📤 INSERTING SCOREBOARD:", {
+  result_text: cleaned,
+  student_id: id || null
+});
 
   /* =========================
      SUPABASE INSERT
