@@ -1967,53 +1967,41 @@ window.saveResult = async function saveResult(text) {
 
   try {
 
-    if (!supabaseClient) {
-      throw new Error("Supabase client not initialized");
-    }
-
-    const cleaned = String(text || "")
-      .replace(/\s+/g, " ")
+    const cleaned =
+      String(text ?? "")
+      .replace(/\u00A0/g, " ")
       .trim();
 
-    if (!cleaned) {
-      throw new Error("Empty scoreboard");
+    console.log("📤 RECEIVED:", cleaned);
+
+    if (!cleaned.length) {
+      throw new Error("Rendered scoreboard empty");
     }
 
-    if (cleaned === window.lastUploadedScore) {
-      console.log("⚠️ Duplicate blocked");
-      return;
-    }
+    const { data, error } =
+      await supabaseClient
+        .from("scoreboard_raw")
+        .insert([
+          {
+            result_text: cleaned
+          }
+        ]);
 
-    console.log("📤 SENDING:", cleaned);
+    if (error) throw error;
 
-    const { data, error } = await supabaseClient
-      .from("scoreboard_raw")
-      .insert([
-        {
-          result_text: cleaned
-        }
-      ])
-      .select();
-
-    if (error) {
-      throw error;
-    }
-
-    window.lastUploadedScore = cleaned;
-
-    console.log("✅ SAVED:", data);
-    alert("✅ Score saved");
+    console.log("✅ SAVED", data);
 
   } catch (err) {
 
-    console.error("❌ SUPABASE ERROR:", err);
+    console.error(err);
 
-    alert(
-      "SUPABASE FAILED\n\n" +
-      (err.message || JSON.stringify(err))
-    );
+    alert("SUPABASE FAILED\n\n" + err.message);
+
   }
-};</script>
+
+};
+
+</script>
 
 
 
