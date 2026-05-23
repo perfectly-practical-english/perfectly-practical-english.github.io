@@ -1950,7 +1950,7 @@ window.scrambleSubmitted = false;
 function checkEnableSubmit() {
 
   // 🔒 stay disabled forever after submit
-  if (scrambleSubmitted) {
+  if (window.scrambleSubmitted) {
     submitBtn.disabled = true;
     return;
   }
@@ -1967,6 +1967,7 @@ checkEnableSubmit(); // initialize state
 
 // ---------------------- SUBMIT ----------------------
 document.getElementById('scrambleSubmitBtn').addEventListener('click', async () => {
+
   const filename = window.location.pathname.split('/').pop();
   const nm = document.getElementById('scrambleName').value.trim();
   const id = document.getElementById('scrambleId').value.trim();
@@ -2008,8 +2009,17 @@ document.getElementById('scrambleSubmitBtn').addEventListener('click', async () 
   scoreOutput.textContent = scoreText;
   document.getElementById('scrambleScoreboard').style.display = 'block';
 
-window.scrambleSubmitted = true;
-document.getElementById('scrambleSubmitBtn').disabled = true;
+try {
+  await window.saveResult(scoreText, id);
+
+  window.scrambleSubmitted = true;
+  document.getElementById('scrambleSubmitBtn').disabled = true;
+
+} catch (err) {
+  console.error("Save failed:", err);
+  alert("Save failed: " + err.message);
+  return;
+}
   // lock ONLY after successful Supabase save
 // document.getElementById('scrambleSubmitBtn').disabled = true;
 });
@@ -2052,7 +2062,7 @@ const highlightBtn = document.getElementById('highlightSelected');
 const copyBtn = document.getElementById('copySelected');
 const restartBtn = document.getElementById('restartBtn');
 const pauseResumeBtn = document.getElementById('pauseResumeBtn');
-const startBtn = document.getElementById('startBtn');
+const speechStartBtn = document.getElementById('startBtn');
 
 /* =========================
    State & Voices
@@ -2218,7 +2228,7 @@ function speakDialog(text) {
 /* =========================
    START
 ========================= */
-startBtn.addEventListener('click', () => {
+speechStartBtn.addEventListener('click', () => {
   speechSynthesis.cancel();
   isPaused = false;
   pauseResumeBtn.textContent = '⏸';
@@ -2928,107 +2938,94 @@ window.addEventListener("resize", adjustBodyPadding);
 })();
 </script>
 
+
 <!-- SUPABASE LIBRARY -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
 
-const supabaseClient = window.supabase?.createClient(
-  'https://etwwriloppklhhkmswpr.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV0d3dyaWxvcHBrbGhoa21zd3ByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NDM3NTcsImV4cCI6MjA5NDExOTc1N30.rmquTqYW6WqS7jZUbHM_gWecka3jkiWzYb14eJ10hpQ'
-);
+let supabaseClient = null;
+window.supabaseReady = false;
 
-if (!supabaseClient) {
-  console.error("❌ Supabase failed to initialize");
+try {
+  if (!window.supabase || !window.supabase.createClient) {
+    throw new Error("Supabase library not loaded");
+  }
+
+  supabaseClient = window.supabase.createClient(
+    'https://etwwriloppklhhkmswpr.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV0d3dyaWxvcHBrbGhoa21zd3ByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NDM3NTcsImV4cCI6MjA5NDExOTc1N30.rmquTqYW6WqS7jZUbHM_gWecka3jkiWzYb14eJ10hpQ'
+  );
+
+  window.supabaseReady = true;
+
+  console.log("✅ Supabase client initialized:", !!supabaseClient);
+
+} catch (err) {
+  console.error("❌ Supabase init failed:", err);
+  supabaseClient = null;
 }
 
-window.lastUploadedScore = null;
 
-window.saveResult = async function saveResult(text) {
+/* =========================
+   SAVE RESULT (CLEAN SINGLE SOURCE OF TRUTH)
+   ========================= */
 
-  if (!supabaseClient) {
-    console.error("❌ No Supabase client");
-    return;
+window.saveResult = async function (text, id = null) {
+
+  if (!window.supabaseReady || !supabaseClient) {
+    throw new Error("Supabase not initialized yet");
   }
 
-  let cleaned;
-
-  try {
-
-    cleaned = String(text)
-      .replace(/\s+/g, " ")
-      .trim();
-
-  } catch (err) {
-
-    console.error("❌ Normalize error:", err);
-    return;
-  }
+  const cleaned = String(text)
+    .replace(/\s+/g, " ")
+    .trim();
 
   if (!cleaned) {
-    console.error("❌ Empty value blocked");
-    return;
+    throw new Error("Empty payload");
   }
 
-  if (cleaned === lastUploadedScore) {
-    console.log("⚠️ Duplicate blocked");
-    return;
-  }
+/* =========================
+   DEDUPE (SAFE PER USER + TEXT)
+   ========================= */
 
-  lastUploadedScore = cleaned;
+const uploadKey = `${id || "no-id"}::${cleaned}`;
 
-  console.log("📤 INSERTING:", cleaned);
+if (window.__lastUploadKey === uploadKey) {
+  console.log("⚠️ Duplicate blocked");
+  return;
+}
 
-  // Parse existing score line
-  const parts = cleaned.split("|");
+window.__lastUploadKey = uploadKey;
 
-  const file_name      = parts[0] || "";
-  const category       = parts[1] || "";
-  const student_name   = parts[2] || "";
-  const student_id     = parts[3] || "";
-  const datetime       = parts[4] || "";
-
-  let score_correct = null;
-  let score_total   = null;
-  let score_percent = null;
-
-  // Parse 12/30
-  if (parts[5]) {
-
-    const scoreMatch = parts[5].match(/^(\d+)\/(\d+)$/);
-
-    if (scoreMatch) {
-      score_correct = Number(scoreMatch[1]);
-      score_total   = Number(scoreMatch[2]);
-    }
-  }
-
-  // Parse 40%
-  if (parts[6]) {
-
-    const pctMatch = parts[6].match(/^(\d+)%$/);
-
-    if (pctMatch) {
-      score_percent = Number(pctMatch[1]);
-    }
-  }
+console.log("📤 INSERTING:", cleaned);
+  /* =========================
+     SUPABASE INSERT (ONLY ONE)
+     ========================= */
 
   const { data, error } = await supabaseClient
-  .from("scoreboard_raw")
-  .insert([
-    {
-      result_text: cleaned
-    }
-  ])
-  .select();
+    .from("scoreboard_raw")
+    .insert([
+      {
+        result_text: cleaned,
+        student_id: id || null
+      }
+    ])
+    .select();
 
   if (error) {
-    console.error("❌ INSERT FAILED:", error);
-    return;
+    console.error("❌ SUPABASE ERROR:", error);
+    throw error;
   }
 
-  console.log("✅ INSERT SUCCESS:", data);
+  if (!data || data.length === 0) {
+    console.warn("⚠️ Insert succeeded but no row returned");
+  }
+
+  console.log("✅ SAVED:", data);
+  return data;
 };
+
 </script>
 
 
