@@ -1950,7 +1950,7 @@ window.scrambleSubmitted = false;
 function checkEnableSubmit() {
 
   // 🔒 stay disabled forever after submit
-  if (scrambleSubmitted) {
+  if (window.scrambleSubmitted) {
     submitBtn.disabled = true;
     return;
   }
@@ -1967,6 +1967,7 @@ checkEnableSubmit(); // initialize state
 
 // ---------------------- SUBMIT ----------------------
 document.getElementById('scrambleSubmitBtn').addEventListener('click', async () => {
+
   const filename = window.location.pathname.split('/').pop();
   const nm = document.getElementById('scrambleName').value.trim();
   const id = document.getElementById('scrambleId').value.trim();
@@ -2004,23 +2005,31 @@ document.getElementById('scrambleSubmitBtn').addEventListener('click', async () 
 
   const scoreText = `${filename}|Scramble|${nm}|${id}|${dateStr}|${score}/${divs.length}|${percentScramble}%`;
 
+  const scoreOutput = document.getElementById('scrambleScoreOutput');
+  scoreOutput.textContent = scoreText;
+  document.getElementById('scrambleScoreboard').style.display = 'block';
 
 const scoreOutput = document.getElementById('scrambleScoreOutput');
-scoreOutput.textContent = scoreText;
-document.getElementById('scrambleScoreboard').style.display = 'block';
 
-try {
-  await saveResult(scoreText);   // ✅ SEND TO SUPABASE HERE
-  console.log("✅ Saved to Supabase");
-} catch (err) {
-  console.error("❌ Supabase save failed:", err);
-  alert("Save failed — check connection");
-  return; // ❌ do NOT lock UI if save fails
+const finalScoreboardText =
+  (scoreOutput?.textContent || scoreText)
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const result = await window.saveResult(finalScoreboardText, id);
+
+if (!result || !result.ok) {
+  alert("Save failed. Not submitted.");
+  console.error("Submission blocked:", result);
+  return;
 }
 
-scrambleSubmitted = true;
+window.scrambleSubmitted = true;
 document.getElementById('scrambleSubmitBtn').disabled = true;
+  // lock ONLY after successful Supabase save
+// document.getElementById('scrambleSubmitBtn').disabled = true;
 });
+
 // Copy / download
 setupCopyDownload(
   document.getElementById('scrambleScoreOutput'),
@@ -2935,108 +2944,131 @@ window.addEventListener("resize", adjustBodyPadding);
 })();
 </script>
 
+
 <!-- SUPABASE LIBRARY -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
 
-const supabaseClient = window.supabase?.createClient(
-  'https://etwwriloppklhhkmswpr.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV0d3dyaWxvcHBrbGhoa21zd3ByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NDM3NTcsImV4cCI6MjA5NDExOTc1N30.rmquTqYW6WqS7jZUbHM_gWecka3jkiWzYb14eJ10hpQ'
-);
+let supabaseClient = null;
 
-if (!supabaseClient) {
-  console.error("❌ Supabase failed to initialize");
+try {
+  if (!window.supabase || !window.supabase.createClient) {
+    throw new Error("Supabase library not loaded");
+  }
+
+  supabaseClient = window.supabase.createClient(
+    'https://etwwriloppklhhkmswpr.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV0d3dyaWxvcHBrbGhoa21zd3ByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NDM3NTcsImV4cCI6MjA5NDExOTc1N30.rmquTqYW6WqS7jZUbHM_gWecka3jkiWzYb14eJ10hpQ'
+  );
+
+  console.log("✅ Supabase client initialized:", !!supabaseClient);
+
+} catch (err) {
+  console.error("❌ Supabase init failed:", err);
+  supabaseClient = null;
 }
 
-window.lastUploadedScore = null;
 
-window.saveResult = async function saveResult(text) {
+/* =========================
+   SAVE RESULT (GLOBAL SAFE)
+   ========================= */
 
-  if (!supabaseClient) {
-    console.error("❌ No Supabase client");
-    return;
-  }
+window.saveResult = async function (text, id = null) {
 
   let cleaned;
 
   try {
+    cleaned = String(text).replace(/\s+/g, " ").trim();
+  } catch (err) {
+    console.error("❌ Normalize error:", err);
+    return { ok: false, error: "normalize_failed" };
+  }
 
+  if (!cleaned || !supabaseClient) {
+    console.error("❌ Blocked: empty value or Supabase not ready");
+    return { ok: false, error: "client_not_ready" };
+  }
+
+  console.log("📤 INSERTING SCOREBOARD:", {
+    result_text: cleaned,
+    student_id: id || null
+  });
+
+  const { data, error } = await supabaseClient
+    .from("scoreboard_raw")
+    .insert([
+      {
+        result_text: cleaned,
+        student_id: id || null
+      }
+    ])
+    .select();
+
+  if (error) {
+    console.error("❌ SUPABASE INSERT FAILED:", error.message, error);
+    return { ok: false, error };
+  }
+
+  console.log("✅ INSERT SUCCESS:", data);
+
+  return { ok: true, data };
+};
+
+  let cleaned;
+
+  try {
     cleaned = String(text)
       .replace(/\s+/g, " ")
       .trim();
-
   } catch (err) {
-
     console.error("❌ Normalize error:", err);
     return;
   }
 
-  if (!cleaned) {
-    console.error("❌ Empty value blocked");
+  // HARD SAFETY GATE
+  if (!cleaned || !supabaseClient) {
+    console.error("❌ Blocked: empty value or Supabase not ready");
     return;
   }
 
-  if (cleaned === lastUploadedScore) {
-    console.log("⚠️ Duplicate blocked");
-    return;
-  }
+  /* =========================
+     STRONG DEDUPE (single source of truth)
+     ========================= */
+const uploadKey = cleaned + "|" + Date.now();
+  console.log("📤 INSERTING SCOREBOARD:", {
+  result_text: cleaned,
+  student_id: id || null
+});
 
-  lastUploadedScore = cleaned;
-
-  console.log("📤 INSERTING:", cleaned);
-
-  // Parse existing score line
-  const parts = cleaned.split("|");
-
-  const file_name      = parts[0] || "";
-  const category       = parts[1] || "";
-  const student_name   = parts[2] || "";
-  const student_id     = parts[3] || "";
-  const datetime       = parts[4] || "";
-
-  let score_correct = null;
-  let score_total   = null;
-  let score_percent = null;
-
-  // Parse 12/30
-  if (parts[5]) {
-
-    const scoreMatch = parts[5].match(/^(\d+)\/(\d+)$/);
-
-    if (scoreMatch) {
-      score_correct = Number(scoreMatch[1]);
-      score_total   = Number(scoreMatch[2]);
-    }
-  }
-
-  // Parse 40%
-  if (parts[6]) {
-
-    const pctMatch = parts[6].match(/^(\d+)%$/);
-
-    if (pctMatch) {
-      score_percent = Number(pctMatch[1]);
-    }
-  }
-
+  /* =========================
+     SUPABASE INSERT
+     ========================= */
   const { data, error } = await supabaseClient
-  .from("scoreboard_raw")
-  .insert([
-    {
-      result_text: cleaned
-    }
-  ])
-  .select();
+    .from("scoreboard_raw")
+    .insert([
+      {
+        result_text: cleaned,
+        student_id: id || null
+      }
+    ])
+    .select();
 
   if (error) {
-    console.error("❌ INSERT FAILED:", error);
+    console.error("❌ SUPABASE INSERT FAILED:", error.message, error);
+    window.lastSupabaseError = error;
     return;
+  }
+
+  if (!data || data.length === 0) {
+    console.warn("⚠️ Insert succeeded but no row returned");
   }
 
   console.log("✅ INSERT SUCCESS:", data);
 };
+
 </script>
+
 
 </body>
 </html>
