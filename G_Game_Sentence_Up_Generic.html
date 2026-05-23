@@ -129,7 +129,7 @@ input[type=text] {
    =============================== */
 
 .formRow > button {
-  margin-top: -10px;
+  margin-top: 0;
 
   display: flex;
   align-items: center;
@@ -1384,15 +1384,20 @@ btnUp.addEventListener("click", () => {
 btnDown.addEventListener("click", () => {
   selectSection(sectionIndex + 1, true);
 });
-  container.style.cssText = `
-    position: relative;
-    height: ${ITEM_HEIGHT}px;
-    overflow: hidden;
-    margin-bottom: 10px;
-    touch-action: pan-y;
-    cursor: pointer;
-  `;
-
+container.style.cssText = `
+position: relative;
+height: ${ITEM_HEIGHT}px;
+overflow: hidden;
+touch-action: pan-y;
+cursor: pointer;
+width: 100%;
+display: flex;
+align-items: center;
+justify-content: center;
+border: 1px solid #999;
+border-radius: 6px;
+box-sizing: border-box;
+`;
   const wheel = document.createElement("div");
   wheel.style.cssText = `
     position: absolute;
