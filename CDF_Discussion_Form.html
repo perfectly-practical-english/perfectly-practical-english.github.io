@@ -283,9 +283,9 @@ postBtn.onclick = async () => {
 async function loadThread() {
 
   const { data, error } = await supabaseClient
-    .from("instant_input")
-    .select("entry")
-    .order("id", { ascending: false });
+.from("instant_input")
+.select("entry")
+.order("created_at", { ascending: false });
 
   if (error) {
     console.error("Load error:", error);
