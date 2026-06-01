@@ -1540,7 +1540,7 @@ function updateWheelPosition() {
 
 loadVocab(wordListText).then(data => {
   sections = data;
-  currentSectionIndex = -1; // start with placeholder selected
+  currentSectionIndex = -1;
   wordList = [];
   renderSectionWheel();
   startBtn.disabled = false;
