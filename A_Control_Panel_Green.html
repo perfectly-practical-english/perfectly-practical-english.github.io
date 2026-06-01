@@ -1594,7 +1594,63 @@ document.addEventListener("DOMContentLoaded", function () {
 </script>
 
 
+<script>
+(function () {
 
+  // ===============================
+  // FORCE ROOT-RELATIVE IFRAME PATHS
+  // ===============================
+
+  function resolvePath(src) {
+    if (!src) return src;
+
+    // leave absolute URLs untouched
+    if (src.startsWith("http://") || src.startsWith("https://") || src.startsWith("/")) {
+      return src;
+    }
+
+    // force root-level resolution
+    return "/" + src.replace(/^\.?\//, "");
+  }
+
+  // ===============================
+  // PATCH EXISTING IFRAMES
+  // ===============================
+  function fixAllIframes() {
+    document.querySelectorAll("iframe").forEach(frame => {
+      const src = frame.getAttribute("src");
+
+      // ignore blank placeholders
+      if (!src || src === "about:blank") return;
+
+      frame.src = resolvePath(src);
+    });
+  }
+
+  // ===============================
+  // INTERCEPT FUTURE iframe.src ASSIGNMENTS
+  // ===============================
+  const desc = Object.getOwnPropertyDescriptor(HTMLIFrameElement.prototype, "src");
+
+  if (desc && desc.set) {
+    Object.defineProperty(HTMLIFrameElement.prototype, "src", {
+      set(value) {
+        const fixed = resolvePath(value);
+        desc.set.call(this, fixed);
+      },
+      get() {
+        return desc.get.call(this);
+      }
+    });
+  }
+
+  // ===============================
+  // RUN ON LOAD
+  // ===============================
+  window.addEventListener("DOMContentLoaded", fixAllIframes);
+
+})();
+</script>
 
 </body>
 </html>
