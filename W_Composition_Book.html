@@ -11,12 +11,16 @@
   --red:#b82b2b;
 
   --pageW:852px;
-  --pageH:1081px;
+  --pageH:1200px;
 
   --row:34px;
+  --inputH:150px;
+
+  --leftW:135px;
+  --rightW:calc(var(--pageW) - var(--leftW));
 }
 
-*{box-sizing:border-box;touch-action:none;}
+*{box-sizing:border-box;}
 
 html,body{
   margin:0;
@@ -42,9 +46,40 @@ body{
   font-family:"Comic Sans MS",cursive;
 }
 
+/* ================= INPUTS ================= */
+
+.inputBar{
+  position:absolute;
+  top:0;
+  left:0;
+  right:0;
+  height:var(--inputH);
+  display:flex;
+  z-index:20;
+  border-bottom:2px solid var(--rule);
+}
+
+textarea{
+  resize:none;
+  font-family:inherit;
+  font-size:14px;
+  padding:10px 6px 6px 6px;
+  border:none;
+  outline:none;
+  background:var(--paper);
+  user-select:text;
+  touch-action:auto;
+  line-height:1.2;
+}
+
+#leftInput{ width:var(--leftW); }
+#rightInput{ width:var(--rightW); }
+
+/* ================= GRID ================= */
+
 .lines{
   position:absolute;
-  inset:0;
+  inset:var(--inputH) 0 0 0;
 
   background:repeating-linear-gradient(
     to bottom,
@@ -53,52 +88,41 @@ body{
     var(--rule) calc(var(--row) - 1px),
     var(--rule) var(--row)
   );
-
-  -webkit-mask-image:linear-gradient(
-    to bottom,
-    transparent 0,
-    transparent calc(var(--row)*3),
-    black calc(var(--row)*3),
-    black 100%
-  );
-
-  mask-image:linear-gradient(
-    to bottom,
-    transparent 0,
-    transparent calc(var(--row)*3),
-    black calc(var(--row)*3),
-    black 100%
-  );
 }
 
 .red{
   position:absolute;
-  left:135px;
+  left:var(--leftW);
   top:0;
   bottom:0;
-  width:2px;
+  width:3px;
   background:var(--red);
-  z-index:5;
+  z-index:9999;
+  pointer-events:none;
+  box-shadow:0 0 6px rgba(184,43,43,.4);
 }
+
+/* ================= SHEETS ================= */
 
 .sheet{
   position:absolute;
-  top:0;
+  top:var(--inputH);
   bottom:0;
   display:grid;
   grid-auto-rows:var(--row);
   align-content:start;
 }
+
 .leftSheet{
   left:0;
-  width:135px;
-  grid-template-columns:135px;
+  width:var(--leftW);
+  grid-template-columns:var(--leftW);
 }
 
 .rightSheet{
-  left:135px;
-  width:calc(100% - 135px);
-  grid-template-columns:repeat(5,145px);
+  left:var(--leftW);
+  width:var(--rightW);
+  grid-template-columns:repeat(5,1fr);
 }
 
 .cell{
@@ -124,6 +148,11 @@ body{
 <div class="frame">
 <div class="page">
 
+<div class="inputBar">
+  <textarea id="leftInput"></textarea>
+  <textarea id="rightInput"></textarea>
+</div>
+
 <div class="lines"></div>
 <div class="red"></div>
 
@@ -135,484 +164,542 @@ body{
 
 <script>
 
-/* ---------------- RAW TEXT ---------------- */
-
-const rawLeft = `
-
-1
-
-26 May 2026
-Unit 1
-Hobbies
-
-
-
-
-
-27 May 2026
-Unit 1
-go
-play
-have
-do
-always
-sometimes
-never
-
-
-
-`;
-
-const rawRight = `
-
-
-
-
-video gaming
-listening to music
-watching movies
-football
-basketball
-drawing
-swimming
-photography
-dancing
-badminton
-volleyball
-reading
-running
-cycling
-singing
-table tennis
-art
-playing guitar
-card games
-chess
-traveling
-cooking
-baking
-board games
-writing
-playing piano
-skateboarding
-martial arts
-collecting
-painting
-
-
-
-How
-often
-do
-you
-go
-to
-the
-cinema?
-
-I
-sometimes
-go
-to
-the
-cinema.
-
-
-How
-often
-do
-you
-play
-chess?
-
-I
-always
-play
-chess.
-
-
-How
-often
-do
-you
-have
-nightmares?
-
-I
-never
-have
-nightmares.
-`;
-
-/* ---------------- CONFIG ---------------- */
-
 const ROWS = Math.ceil(1081 / 34);
 const COLS = 5;
 
-/* ---------------- STATE ---------------- */
+const leftEl = document.getElementById("left");
+const rightEl = document.getElementById("right");
 
-const leftEl=document.getElementById("left");
-const rightEl=document.getElementById("right");
+const leftInput = document.getElementById("leftInput");
+const rightInput = document.getElementById("rightInput");
 
-let dragging=false;
-let editing=false;
+let dragging = false;
+let editing = false;
 
-let sel=null;
-let anchor=null;
+let anchorCell = null;
+let focusCell = null;
 
-/* ---------------- PARSERS ---------------- */
+/* ================= PARSING ================= */
 
-function parseLeft(raw){
-  return raw.replace(/\r/g,"").split("\n");
+function parseLeft(text){
+  return text.replace(/\r/g,"").split("\n").map(t=>t.trim());
 }
 
-/* workflow parser */
-function parseRight(raw){
+function parseRight(text){
+  const lines = text.replace(/\r/g,"").split("\n");
 
-  const lines = raw.replace(/\r/g,"").split("\n");
+  const tokens = [];
 
-  const rows=[];
+  for (let i = 0; i < lines.length; i++) {
+    const words = lines[i].trim().split(/\s+/).filter(Boolean);
 
-  let current=Array(COLS).fill("");
-  let col=0;
+    for (const w of words) {
+      tokens.push({ word: w, break: false });
+    }
 
-  function flush(){
-    rows.push(current);
-    current=Array(COLS).fill("");
-    col=0;
+    if (i < lines.length - 1) {
+      tokens.push({ word: "", break: true });
+    }
   }
 
-  let blankCount=0;
+  return tokens;
+}
 
-  for(const line of lines){
+function buildRight(tokens){
+  const rows = [];
+  let row = [];
 
-    const t=line.trim();
+  function flushRow(){
+    rows.push(row);
+    row = [];
+  }
 
-    if(t===""){
-      blankCount++;
+  for (const t of tokens) {
+
+    if (t.break) {
+      while (row.length < COLS) row.push("");
+      flushRow();
       continue;
     }
 
-    if(blankCount>0){
+    row.push(t.word || "");
 
-      if(col>0){
-        flush();
-      }
-
-      for(let i=1;i<blankCount;i++){
-        rows.push(Array(COLS).fill(""));
-      }
-
-      blankCount=0;
-    }
-
-    current[col]=t;
-    col++;
-
-    if(col>=COLS){
-      flush();
+    if (row.length === COLS) {
+      flushRow();
     }
   }
 
-  if(blankCount>0){
-
-    if(col>0){
-      flush();
-    }
-
-    for(let i=1;i<blankCount;i++){
-      rows.push(Array(COLS).fill(""));
-    }
+  if (row.length) {
+    while (row.length < COLS) row.push("");
+    flushRow();
   }
 
-  if(col>0 || rows.length===0){
-    rows.push(current);
-  }
-
-  return rows;
+  return Array.from({length: ROWS}, (_,i)=>rows[i] || ["","","","",""]);
 }
 
-const leftRows=parseLeft(rawLeft);
-const rightRows=parseRight(rawRight);
+/* ================= UPDATE ================= */
 
-/* ---------------- SELECTION ---------------- */
+let leftRows=[], rightRows=[];
+
+function update(){
+  leftRows = parseLeft(leftInput.value);
+  rightRows = buildRight(parseRight(rightInput.value));
+  render();
+}
+
+leftInput.addEventListener("input", update);
+rightInput.addEventListener("input", update);
+
+/* ================= SELECTION ================= */
 
 function clearSelection(){
-  document
-    .querySelectorAll(".cell.selected")
+  document.querySelectorAll(".cell.selected")
     .forEach(c=>c.classList.remove("selected"));
 }
 
-function select(cell){
-
+function renderSelection(){
   clearSelection();
+  if(!anchorCell || !focusCell) return;
+  if(anchorCell.dataset.side !== focusCell.dataset.side) return;
 
-  cell.classList.add("selected");
+  const side = anchorCell.dataset.side;
 
-  sel={
-    r1:+cell.dataset.r,
-    r2:+cell.dataset.r,
-    c1:+(cell.dataset.c||0),
-    c2:+(cell.dataset.c||0),
-    side:cell.dataset.side
-  };
+  const r1 = Math.min(+anchorCell.dataset.r, +focusCell.dataset.r);
+  const r2 = Math.max(+anchorCell.dataset.r, +focusCell.dataset.r);
 
-  anchor=cell;
-}
+  const c1 = Math.min(+(anchorCell.dataset.c||0), +(focusCell.dataset.c||0));
+  const c2 = Math.max(+(anchorCell.dataset.c||0), +(focusCell.dataset.c||0));
 
-function selectRange(a,b){
+  const target = side === "L" ? leftEl : rightEl;
 
-  if(a.dataset.side!==b.dataset.side)return;
-
-  const side=a.dataset.side;
-
-  sel={
-    r1:Math.min(+a.dataset.r,+b.dataset.r),
-    r2:Math.max(+a.dataset.r,+b.dataset.r),
-    c1:Math.min(+(a.dataset.c||0),+(b.dataset.c||0)),
-    c2:Math.max(+(a.dataset.c||0),+(b.dataset.c||0)),
-    side
-  };
-
-  clearSelection();
-
-  const target=side==="L"?leftEl:rightEl;
-
-  for(let r=sel.r1;r<=sel.r2;r++){
-    for(let c=sel.c1;c<=sel.c2;c++){
-
-      const el=target.querySelector(
-        side==="L"
-        ? `[data-r="${r}"][data-side="L"]`
-        : `[data-r="${r}"][data-c="${c}"][data-side="R"]`
-      );
+  for(let r=r1;r<=r2;r++){
+    for(let c=c1;c<=c2;c++){
+      const el = side === "L"
+        ? target.querySelector(`[data-r="${r}"][data-side="L"]`)
+        : target.querySelector(`[data-r="${r}"][data-c="${c}"][data-side="R"]`);
 
       if(el) el.classList.add("selected");
     }
   }
 }
 
-/* ---------------- COPY CUT PASTE ---------------- */
+function setSelection(a, b, additive=false){
+  if(editing) return;
+
+  if(!additive || !anchorCell){
+    anchorCell = a;
+  }
+
+  focusCell = b;
+  renderSelection();
+}
+
+/* ================= EDIT (FIXED) ================= */
+
+function edit(cell){
+  editing = true;
+
+  dragging = false;
+  clearSelection();
+
+  cell.contentEditable = true;
+  cell.focus();
+
+  const range = document.createRange();
+  range.selectNodeContents(cell);
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+
+  cell.onblur = () => {
+    editing = false;
+    cell.contentEditable = false;
+  };
+}
+
+/* ================= COPY / PASTE (UNCHANGED) ================= */
 
 function copy(){
+  const active = document.activeElement;
+  if (active instanceof HTMLTextAreaElement) return;
 
-  if(!sel)return;
+  if(!anchorCell || !focusCell) return;
 
-  const target=sel.side==="L"?leftEl:rightEl;
+  const selSide = anchorCell.dataset.side;
+  const target = selSide==="L"?leftEl:rightEl;
+
+  const r1 = Math.min(+anchorCell.dataset.r, +focusCell.dataset.r);
+  const r2 = Math.max(+anchorCell.dataset.r, +focusCell.dataset.r);
+
+  const c1 = Math.min(+(anchorCell.dataset.c||0), +(focusCell.dataset.c||0));
+  const c2 = Math.max(+(anchorCell.dataset.c||0), +(focusCell.dataset.c||0));
 
   const out=[];
 
-  for(let r=sel.r1;r<=sel.r2;r++){
-
+  for(let r=r1;r<=r2;r++){
     const row=[];
-
-    for(let c=sel.c1;c<=sel.c2;c++){
-
-      const el=target.querySelector(
-        sel.side==="L"
-        ? `[data-r="${r}"][data-side="L"]`
-        : `[data-r="${r}"][data-c="${c}"][data-side="R"]`
-      );
+    for(let c=c1;c<=c2;c++){
+      const el = selSide==="L"
+        ? target.querySelector(`[data-r="${r}"][data-side="L"]`)
+        : target.querySelector(`[data-r="${r}"][data-c="${c}"][data-side="R"]`);
 
       row.push(el?.textContent||"");
     }
-
     out.push(row.join("\t"));
   }
 
   navigator.clipboard.writeText(out.join("\n"));
 }
 
-function cut(){
-  copy();
-  clearCells();
-}
-
 function paste(text){
+  const active = document.activeElement;
+  if (active instanceof HTMLTextAreaElement) return;
 
-  if(!sel)return;
+  if(!anchorCell) return;
 
-  const rows=text
-    .replace(/\r/g,"")
-    .split("\n")
-    .map(r=>r.split("\t"));
+  const rows = text.replace(/\r/g,"").split("\n").map(r=>r.split("\t"));
 
-  const target=sel.side==="L"?leftEl:rightEl;
+  const target = anchorCell.dataset.side==="L"?leftEl:rightEl;
 
   rows.forEach((row,r)=>{
+    row.forEach((val,c)=>{
+      const el = anchorCell.dataset.side==="L"
+        ? target.querySelector(`[data-r="${+anchorCell.dataset.r+r}"][data-side="L"]`)
+        : target.querySelector(`[data-r="${+anchorCell.dataset.r+r}"][data-c="${+(anchorCell.dataset.c||0)+c}"][data-side="R"]`);
 
-    row.forEach((value,c)=>{
-
-      const el=target.querySelector(
-        sel.side==="L"
-        ? `[data-r="${sel.r1+r}"][data-side="L"]`
-        : `[data-r="${sel.r1+r}"][data-c="${sel.c1+c}"][data-side="R"]`
-      );
-
-      if(el) el.textContent=value;
+      if(el) el.textContent=val;
     });
-
   });
 }
 
+/* ================= CLEAR ================= */
+
 function clearCells(){
+  if(!anchorCell || !focusCell) return;
 
-  if(!sel)return;
+  const side = anchorCell.dataset.side;
+  const target = side==="L"?leftEl:rightEl;
 
-  const target=sel.side==="L"?leftEl:rightEl;
+  const r1 = Math.min(+anchorCell.dataset.r, +focusCell.dataset.r);
+  const r2 = Math.max(+anchorCell.dataset.r, +focusCell.dataset.r);
 
-  for(let r=sel.r1;r<=sel.r2;r++){
-    for(let c=sel.c1;c<=sel.c2;c++){
+  const c1 = Math.min(+(anchorCell.dataset.c||0), +(focusCell.dataset.c||0));
+  const c2 = Math.max(+(anchorCell.dataset.c||0), +(focusCell.dataset.c||0));
 
-      const el=target.querySelector(
-        sel.side==="L"
-        ? `[data-r="${r}"][data-side="L"]`
-        : `[data-r="${r}"][data-c="${c}"][data-side="R"]`
-      );
+  for(let r=r1;r<=r2;r++){
+    for(let c=c1;c<=c2;c++){
+      const el = side==="L"
+        ? target.querySelector(`[data-r="${r}"][data-side="L"]`)
+        : target.querySelector(`[data-r="${r}"][data-c="${c}"][data-side="R"]`);
 
       if(el) el.textContent="";
     }
   }
 }
 
-/* ---------------- EDIT ---------------- */
-
-function edit(cell){
-
-  editing=true;
-
-  cell.contentEditable=true;
-
-  cell.focus();
-
-  document.execCommand("selectAll");
-
-  cell.onblur=()=>{
-    editing=false;
-    cell.contentEditable=false;
-  };
-}
-
-/* ---------------- RENDER ---------------- */
+/* ================= RENDER ================= */
 
 function render(){
+  leftEl.innerHTML="";
+  rightEl.innerHTML="";
 
-leftEl.innerHTML="";
-rightEl.innerHTML="";
+  for(let r=0;r<ROWS;r++){
 
-for(let r=0;r<ROWS;r++){
+    const L=document.createElement("div");
+    L.className="cell";
+    L.dataset.side="L";
+    L.dataset.r=r;
+    L.textContent=leftRows[r]||"";
 
-const L=document.createElement("div");
+    L.onpointerdown=(e)=>{
+      if(editing) return;
+      dragging=true;
+      setSelection(L,L,e.shiftKey);
+    };
 
-L.className="cell";
-L.dataset.side="L";
-L.dataset.r=r;
+    L.onpointerenter=()=>{
+      if(dragging && anchorCell?.dataset.side==="L"){
+        focusCell=L;
+        renderSelection();
+      }
+    };
 
-L.textContent=leftRows[r]??"";
+    L.ondblclick=()=>edit(L);   /* FIXED */
 
-L.onpointerdown=()=>{
-dragging=true;
-select(L);
-};
+    leftEl.appendChild(L);
 
-L.onpointerenter=()=>{
-if(dragging&&anchor?.dataset.side==="L"){
-selectRange(anchor,L);
-}
-};
+    for(let c=0;c<COLS;c++){
+      const R=document.createElement("div");
+      R.className="cell";
+      R.dataset.side="R";
+      R.dataset.r=r;
+      R.dataset.c=c;
+      R.textContent=rightRows[r]?.[c]||"";
 
-L.ondblclick=()=>edit(L);
+      R.onpointerdown=(e)=>{
+        if(editing) return;
+        dragging=true;
+        setSelection(R,R,e.shiftKey);
+      };
 
-leftEl.appendChild(L);
+      R.onpointerenter=()=>{
+        if(dragging && anchorCell?.dataset.side==="R"){
+          focusCell=R;
+          renderSelection();
+        }
+      };
 
-for(let c=0;c<COLS;c++){
+      R.ondblclick=()=>edit(R);
 
-const R=document.createElement("div");
-
-R.className="cell";
-R.dataset.side="R";
-R.dataset.r=r;
-R.dataset.c=c;
-
-R.textContent=rightRows[r]?.[c]??"";
-
-R.onpointerdown=()=>{
-dragging=true;
-select(R);
-};
-
-R.onpointerenter=()=>{
-if(dragging&&anchor?.dataset.side==="R"){
-selectRange(anchor,R);
-}
-};
-
-R.ondblclick=()=>edit(R);
-
-rightEl.appendChild(R);
-
-}
-
+      rightEl.appendChild(R);
+    }
+  }
 }
 
-}
+/* ================= POINTER ================= */
 
-document.addEventListener("pointerup",()=>dragging=false);
+document.addEventListener("pointermove",(e)=>{
+  if(!dragging || !anchorCell) return;
 
-document.addEventListener("copy",e=>{
-copy();
-e.preventDefault();
+  const el=document.elementFromPoint(e.clientX,e.clientY);
+  if(!el || !el.classList.contains("cell")) return;
+
+  if(el.dataset.side!==anchorCell.dataset.side) return;
+
+  focusCell=el;
+  renderSelection();
 });
 
-document.addEventListener("paste",e=>{
-if(editing)return;
-paste(e.clipboardData.getData("text"));
-e.preventDefault();
+document.addEventListener("pointerup",()=>{
+  dragging=false;
 });
 
-document.addEventListener("keydown",e=>{
+/* ================= KEYBOARD ================= */
 
-if(editing)return;
-
-if((e.ctrlKey||e.metaKey)&&e.key==="x"){
-cut();
-e.preventDefault();
+function getCell(side,r,c=0){
+  return document.querySelector(
+    `[data-side="${side}"][data-r="${r}"]${side==="R"?`[data-c="${c}"]`:""}`
+  );
 }
 
-if(e.key==="Delete"||e.key==="Backspace"){
-clearCells();
-e.preventDefault();
+function moveCell(cell,key){
+  const r=+cell.dataset.r;
+  const c=+(cell.dataset.c||0);
+  const side=cell.dataset.side;
+
+  if(key==="ArrowDown") return getCell(side,r+1,c);
+  if(key==="ArrowUp") return getCell(side,r-1,c);
+  if(key==="ArrowRight") return getCell(side,r,c+1);
+  if(key==="ArrowLeft") return getCell(side,r,c-1);
+
+  return cell;
 }
 
+document.addEventListener("keydown",(e)=>{
+  if(editing) return;
+
+  const active=document.activeElement;
+  if(active instanceof HTMLTextAreaElement) return;
+
+  if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(e.key)){
+    e.preventDefault();
+
+    const start=focusCell||anchorCell;
+    if(!start) return;
+
+    const next=moveCell(start,e.key);
+    if(!next) return;
+
+    focusCell=next;
+
+    if(e.shiftKey){
+      if(!anchorCell) anchorCell=start;
+    }else{
+      anchorCell=next;
+    }
+
+    renderSelection();
+  }
+
+  if ((e.ctrlKey||e.metaKey)&&e.key==="x"){
+    copy();
+    clearCells();
+    e.preventDefault();
+  }
+
+  if(e.key==="Delete"||e.key==="Backspace"){
+    clearCells();
+    e.preventDefault();
+  }
 });
 
-render();
+/* ================= COPY/PASTE ================= */
 
-(function(){
-
-const hotspot=document.createElement("div");
-
-Object.assign(hotspot.style,{
-position:"absolute",
-top:"0",
-right:"0",
-width:"80px",
-height:"80px",
-zIndex:"9999"
+document.addEventListener("copy",(e)=>{
+  if(document.activeElement instanceof HTMLTextAreaElement) return;
+  if(!anchorCell||!focusCell) return;
+  copy();
+  e.preventDefault();
 });
 
-hotspot.onclick=()=>{
-clearSelection();
-sel=null;
-anchor=null;
-};
+document.addEventListener("paste",(e)=>{
+  if(document.activeElement instanceof HTMLTextAreaElement) return;
+  if(editing) return;
+  if(!anchorCell) return;
+  paste(e.clipboardData.getData("text"));
+  e.preventDefault();
+});
 
-document.querySelector(".page")
-.appendChild(hotspot);
-
-})();
+update();
 
 </script>
 
+<script>
+/* ================= TABLE UNDO MODULE (STANDALONE) ================= */
+
+(() => {
+  const leftInput = document.getElementById("leftInput");
+  const rightInput = document.getElementById("rightInput");
+  const leftEl = document.getElementById("left");
+  const rightEl = document.getElementById("right");
+
+  const undoStack = [];
+  const redoStack = [];
+
+  let isRestoring = false;
+  let debounceTimer = null;
+
+  const ROWS =  Math.ceil(1081 / 34);
+  const COLS = 5;
+
+  function snapshot() {
+    const cells = [];
+
+    leftEl.querySelectorAll(".cell").forEach(el => {
+      cells.push({
+        side: "L",
+        r: +el.dataset.r,
+        c: 0,
+        v: el.textContent
+      });
+    });
+
+    rightEl.querySelectorAll(".cell").forEach(el => {
+      cells.push({
+        side: "R",
+        r: +el.dataset.r,
+        c: +el.dataset.c,
+        v: el.textContent
+      });
+    });
+
+    return {
+      left: leftInput.value,
+      right: rightInput.value,
+      cells
+    };
+  }
+
+  function apply(state) {
+    isRestoring = true;
+
+    leftInput.value = state.left;
+    rightInput.value = state.right;
+
+    if (typeof update === "function") update();
+    if (typeof render === "function") render();
+
+    requestAnimationFrame(() => {
+      state.cells.forEach(c => {
+        const selector =
+          c.side === "L"
+            ? `[data-side="L"][data-r="${c.r}"]`
+            : `[data-side="R"][data-r="${c.r}"][data-c="${c.c}"]`;
+
+        const el = document.querySelector(selector);
+        if (el) el.textContent = c.v;
+      });
+
+      isRestoring = false;
+    });
+  }
+
+  function pushState() {
+    if (isRestoring) return;
+
+    const state = snapshot();
+    const last = undoStack[undoStack.length - 1];
+
+    if (last && JSON.stringify(last) === JSON.stringify(state)) return;
+
+    undoStack.push(state);
+    if (undoStack.length > 100) undoStack.shift();
+
+    redoStack.length = 0;
+  }
+
+  function scheduleCapture() {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(pushState, 150);
+  }
+
+  function undo() {
+    if (undoStack.length < 2) return;
+
+    const current = undoStack.pop();
+    redoStack.push(current);
+
+    const prev = undoStack[undoStack.length - 1];
+    apply(prev);
+  }
+
+  function redo() {
+    if (!redoStack.length) return;
+
+    const state = redoStack.pop();
+    undoStack.push(state);
+    apply(state);
+  }
+
+  /* ================= INIT ================= */
+
+  window.addEventListener("load", () => {
+    undoStack.push(snapshot());
+  });
+
+  /* ================= OBSERVERS ================= */
+
+  const observer = new MutationObserver(() => {
+    scheduleCapture();
+  });
+
+  observer.observe(leftEl, { childList: true, subtree: true, characterData: true });
+  observer.observe(rightEl, { childList: true, subtree: true, characterData: true });
+
+  leftInput.addEventListener("input", scheduleCapture);
+  rightInput.addEventListener("input", scheduleCapture);
+
+  /* ================= KEYBOARD ================= */
+
+  document.addEventListener("keydown", (e) => {
+    const active = document.activeElement;
+    if (active instanceof HTMLTextAreaElement) return;
+
+    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === "z") {
+      e.preventDefault();
+      undo();
+    }
+
+    if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === "y" ||
+        (e.shiftKey && e.key.toLowerCase() === "z"))) {
+      e.preventDefault();
+      redo();
+    }
+  });
+
+})();
+
+
+</script>
 </body>
 </html>
