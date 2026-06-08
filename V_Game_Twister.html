@@ -367,6 +367,13 @@ footer {
   );
 }
 
+#hiddenInput {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+  height: 0;
+  width: 0;
+}
 
 
 </style>
@@ -417,6 +424,10 @@ footer {
 
 
 <div id="inputArea">
+  <!-- Hidden real input (captures mobile keyboard reliably) -->
+  <input type="text" id="hiddenInput" autocomplete="off" autocapitalize="none">
+
+  <!-- Visible display-only input -->
   <input type="text" id="wordInput" placeholder="Type word here..." disabled>
 </div>
 
@@ -1257,6 +1268,7 @@ sectionDownBtn.addEventListener("click", () => {
 
 const gameArea = document.getElementById('gameArea');
 const wordInput = document.getElementById('wordInput');
+const hiddenInput = document.getElementById('hiddenInput');
 const countdownOverlay = document.getElementById('countdownOverlay');
 const beam = document.getElementById('beam');
 const scoreboard = document.getElementById('scoreboard');
@@ -1280,6 +1292,12 @@ const ufoContainer = document.getElementById('ufoContainer');
 let swayAmplitude = 50;
 let swaySpeed = 0.01;
 let swayTime = 0;
+
+
+function syncDisplay() {
+  wordInput.value = hiddenInput.value;
+}
+
 
 function animateUFO() {
   swayTime += 1;
@@ -1389,22 +1407,32 @@ function suckCowToUFO(cow) {
 
 function updatePlaceholder() {
   wordInput.placeholder = words[currentWordIndex];
+  hiddenInput.placeholder = words[currentWordIndex];
 }
-
-wordInput.addEventListener("input", () => {
+hiddenInput.addEventListener("input", () => {
   if (!gameStarted) return;
-  const val = wordInput.value.trim().toLowerCase();
+
+  const val = hiddenInput.value.trim().toLowerCase();
+  syncDisplay();
+
   if (val.length > 0) attempts++;
+
   if (words[currentWordIndex] === val) {
     pendingAbduction = true;
-    wordInput.value = "";
+
+    hiddenInput.value = "";
+    syncDisplay();
+
     score++;
     currentWordIndex++;
-    if (currentWordIndex < words.length) updatePlaceholder();
-    else endGame();
+
+    if (currentWordIndex < words.length) {
+      updatePlaceholder();
+    } else {
+      endGame();
+    }
   }
 });
-
 function startTimer() {
   clearInterval(timerInterval);
   timer = 120; //change time limit//
@@ -1468,35 +1496,46 @@ startButton.addEventListener("click", () => {
   scoreboard.style.display = "none";
   scoreButtons.style.display = "none";
 
+  // reset inputs properly
   wordInput.disabled = false;
+  hiddenInput.disabled = false;
+
   wordInput.value = "";
+  hiddenInput.value = "";
+  syncDisplay();
+
   updatePlaceholder();
   startTimer();
-  wordInput.focus();
+
+  // single source of focus = hidden input
+  hiddenInput.focus({ preventScroll: true });
 
   startButton.disabled = true;
   submitButton.disabled = false;
 });
 
+
 submitButton.addEventListener("click", endGame);
 
+
 function scheduleNextCow() {
-  const delay = 1200 + Math.random() * 4000; // wider spread = less clumping
+  const delay = 1200 + Math.random() * 4000;
 
   setTimeout(() => {
     if (gameStarted && currentWordIndex < words.length) {
 
-      // 🚫 prevent stacking / clumping
-      if (cows.length < 3) {
-        spawnCow(words[currentWordIndex]);
+      if (!trainInProgress) {
+        nextTrainStartX = -100;
+        spawnCowTrain();
       }
 
     }
 
-    scheduleNextCow(); // loop
+    scheduleNextCow();
   }, delay);
 }
 window.addEventListener("load", scheduleNextCow);
+
 
 document.getElementById("copyBtn").addEventListener("click", async () => {
   try {
@@ -1506,7 +1545,6 @@ document.getElementById("copyBtn").addEventListener("click", async () => {
     alert("Clipboard error.");
   }
 });
-
 document.getElementById("txtBtn").addEventListener("click", () => {
   const blob = new Blob([scoreData.textContent], { type: "text/plain" });
   const a = document.createElement("a");
@@ -2083,21 +2121,23 @@ window.addEventListener("resize", adjustBodyPadding);
   const wordInput = document.getElementById("wordInput");
 
   // Focus input on touch or click inside game area
-  gameArea.addEventListener("pointerdown", () => {
-    if (!wordInput.disabled) {
-      wordInput.focus({ preventScroll: true });
+gameArea.addEventListener("pointerdown", () => {
+  if (!hiddenInput.disabled) {
+    hiddenInput.focus({ preventScroll: true });
+  }
+});
+// Keep mobile keyboard pinned to hidden input
+hiddenInput.addEventListener("blur", () => {
+  setTimeout(() => {
+    if (
+      document.activeElement !== hiddenInput &&
+      !hiddenInput.disabled &&
+      gameStarted
+    ) {
+      hiddenInput.focus({ preventScroll: true });
     }
-  });
-
-  // Optional: keep mobile keyboards open even after focus lost
-  wordInput.addEventListener("blur", () => {
-    setTimeout(() => {
-      if (document.activeElement !== wordInput && !wordInput.disabled) {
-        wordInput.focus({ preventScroll: true });
-      }
-    }, 50);
-  });
-</script>
+  }, 50);
+});</script>
 
 <script>
 (function() {

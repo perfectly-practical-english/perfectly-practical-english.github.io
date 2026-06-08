@@ -159,6 +159,31 @@ body {
   width: 100%;
   box-sizing: border-box;
 }
+
+
+#randomizeBtn {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 12px;
+
+  padding: 12px 16px;
+  font-weight: 700;
+  cursor: pointer;
+
+  box-shadow: 0 6px 14px rgba(0,0,0,0.2);
+  z-index: 9999;
+}
+
+#randomizeBtn:hover {
+  background: #dc2626;
+}
+
+
 </style>
 </head>
 
@@ -553,5 +578,62 @@ render();
 
 </script>
 
+<script>
+
+function randomizeSeats() {
+  const cls = classList[currentIndex];
+  const students = classData[cls];
+
+  if (!students) return;
+
+  const LOCK_5 = 4;
+  const LOCK_15 = 14;
+
+  // keep locked seats
+  const locked5 = students[LOCK_5];
+  const locked15 = students[LOCK_15];
+
+  // collect all movable students
+  const pool = [];
+
+  for (let i = 0; i < students.length; i++) {
+    if (i === LOCK_5 || i === LOCK_15) continue;
+    if (students[i]) pool.push(students[i]);
+  }
+
+  // shuffle pool
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+
+  // rebuild array
+  const rebuilt = new Array(students.length).fill(null);
+
+  let p = 0;
+
+  for (let i = 0; i < rebuilt.length; i++) {
+    if (i === LOCK_5) {
+      rebuilt[i] = locked5;
+    } else if (i === LOCK_15) {
+      rebuilt[i] = locked15;
+    } else {
+      rebuilt[i] = pool[p++] || null;
+    }
+  }
+
+  // replace + force render
+  classData[cls] = rebuilt;
+  delete classData[cls]._floor;
+  dragItem = null;
+
+  render();
+}
+</script>
+
+
+<button id="randomizeBtn" onclick="randomizeSeats()">
+  RANDOMIZE
+</button>
 </body>
 </html>

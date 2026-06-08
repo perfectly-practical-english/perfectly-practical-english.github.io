@@ -190,17 +190,19 @@ function parseRight(text){
 
   const tokens = [];
 
-  for (let i = 0; i < lines.length; i++) {
-    const words = lines[i].trim().split(/\s+/).filter(Boolean);
+  lines.forEach((line,index)=>{
 
-    for (const w of words) {
-      tokens.push({ word: w, break: false });
+    const words = line.split(/\s+/).filter(Boolean);
+
+    words.forEach(word=>{
+      tokens.push({ word });
+    });
+
+    if(index < lines.length - 1){
+      tokens.push({ newline:true });
     }
 
-    if (i < lines.length - 1) {
-      tokens.push({ word: "", break: true });
-    }
-  }
+  });
 
   return tokens;
 }
@@ -210,33 +212,37 @@ function buildRight(tokens){
   let row = [];
 
   function flushRow(){
+    while(row.length < COLS){
+      row.push("");
+    }
+
     rows.push(row);
     row = [];
   }
 
-  for (const t of tokens) {
+  for(const t of tokens){
 
-    if (t.break) {
-      while (row.length < COLS) row.push("");
-      flushRow();
+    if(t.newline){
+      flushRow();      // ENTER always starts a new grid row
       continue;
     }
 
     row.push(t.word || "");
 
-    if (row.length === COLS) {
+    if(row.length === COLS){
       flushRow();
     }
   }
 
-  if (row.length) {
-    while (row.length < COLS) row.push("");
+  if(row.length){
     flushRow();
   }
 
-  return Array.from({length: ROWS}, (_,i)=>rows[i] || ["","","","",""]);
+  return Array.from(
+    {length:ROWS},
+    (_,i)=>rows[i] || ["","","","",""]
+  );
 }
-
 /* ================= UPDATE ================= */
 
 let leftRows=[], rightRows=[];
