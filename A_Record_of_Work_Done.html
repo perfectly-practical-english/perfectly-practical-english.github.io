@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -68,7 +67,7 @@ textarea{
 
 const supabaseClient = window.supabase?.createClient(
   'https://etwwriloppklhhkmswpr.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV0d3dyaWxvcHBrbGhoa21zd3ByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NDM3NTcsImV4cCI6MjA5NDExOTc1N30.rmquTqYW6WqS7jZUbHM_gWecka3jkiWzYb14eJ10hpQ'
+  'YOUR_SUPABASE_ANON_KEY'
 );
 
 if (!supabaseClient) {
@@ -98,15 +97,24 @@ recognition.lang = "en-US";
 const transcriptBox = document.getElementById("transcript");
 const statusBox = document.getElementById("status");
 
+/* ✅ FIXED TRANSCRIPT HANDLING */
+let finalTranscript = "";
+
 recognition.onresult = function(event){
 
-  let text = "";
+  let interimTranscript = "";
 
-  for(let i = 0; i < event.results.length; i++){
-    text += event.results[i][0].transcript + " ";
+  for (let i = event.resultIndex; i < event.results.length; i++) {
+    const transcript = event.results[i][0].transcript;
+
+    if (event.results[i].isFinal) {
+      finalTranscript += transcript + " ";
+    } else {
+      interimTranscript += transcript;
+    }
   }
 
-  transcriptBox.value = text.trim();
+  transcriptBox.value = finalTranscript + interimTranscript;
 };
 
 recognition.onerror = function(event){
@@ -202,6 +210,7 @@ document
         "✅ Saved successfully";
 
       transcriptBox.value = "";
+      finalTranscript = ""; // ✅ reset after save
 
     } catch(err) {
 
@@ -216,4 +225,3 @@ document
 
 </body>
 </html>
-```

@@ -40,7 +40,6 @@
     color: #222;
   }
 
-  /* THREAD (SUPABASE DISPLAY) */
   #thread {
     height: 300px;
     overflow-y: auto;
@@ -75,7 +74,6 @@
     white-space: pre-wrap;
   }
 
-  /* ROW: NAME + ID + POST */
   #inputRow {
     display: flex;
     gap: 6px;
@@ -98,7 +96,6 @@
     cursor: pointer;
   }
 
-  /* MESSAGE INPUT */
   #messageInput {
     width: 100%;
     min-height: 60px;
@@ -108,7 +105,6 @@
     font-size: 15px;
   }
 
-  /* SPEECH CONTROLS */
   #speechRow {
     display: flex;
     gap: 6px;
@@ -131,7 +127,6 @@
     color: #444;
   }
 
-  /* NEON BORDER */
   #border {
     position: fixed;
     inset: 0;
@@ -151,20 +146,16 @@
 
   <h1>Comments Section</h1>
 
-  <!-- 1. THREAD (SUPABASE OUTPUT) -->
   <div id="thread"></div>
 
-  <!-- 2. NAME + ID + POST -->
   <div id="inputRow">
     <input id="nameInput" placeholder="Name">
     <input id="idInput" placeholder="ID">
     <button id="postBtn">Post</button>
   </div>
 
-  <!-- 3. MESSAGE INPUT -->
   <textarea id="messageInput" placeholder="Type your message…"></textarea>
 
-  <!-- 4. SPEECH -->
   <div id="status"></div>
 
   <div id="speechRow">
@@ -179,12 +170,11 @@
 <script>
 const supabaseClient = supabase.createClient(
   "https://etwwriloppklhhkmswpr.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV0d3dyaWxvcHBrbGhoa21zd3ByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NDM3NTcsImV4cCI6MjA5NDExOTc1N30.rmquTqYW6WqS7jZUbHM_gWecka3jkiWzYb14eJ10hpQ"
+  "YOUR_SUPABASE_ANON_KEY"
 );
 
 /* ELEMENTS */
 const thread = document.getElementById("thread");
-
 const nameInput = document.getElementById("nameInput");
 const idInput = document.getElementById("idInput");
 const msgInput = document.getElementById("messageInput");
@@ -195,7 +185,10 @@ const postBtn = document.getElementById("postBtn");
 
 const statusBox = document.getElementById("status");
 
-/* SPEECH */
+/* =========================
+   FIXED SPEECH RECOGNITION
+========================= */
+
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 const recognition = new SpeechRecognition();
 
@@ -203,12 +196,25 @@ recognition.continuous = true;
 recognition.interimResults = true;
 recognition.lang = "en-US";
 
+/* ✅ critical fix: prevent duplication */
+let finalTranscript = "";
+
 recognition.onresult = (event) => {
-  let text = "";
-  for (let i = 0; i < event.results.length; i++) {
-    text += event.results[i][0].transcript + " ";
+
+  let interimTranscript = "";
+
+  for (let i = event.resultIndex; i < event.results.length; i++) {
+
+    const text = event.results[i][0].transcript;
+
+    if (event.results[i].isFinal) {
+      finalTranscript += text + " ";
+    } else {
+      interimTranscript += text;
+    }
   }
-  msgInput.value = text.trim();
+
+  msgInput.value = finalTranscript + interimTranscript;
 };
 
 recognition.onerror = (e) => {
@@ -270,22 +276,21 @@ postBtn.onclick = async () => {
   } else {
     statusBox.textContent = "Saved";
     msgInput.value = "";
+    finalTranscript = ""; // ✅ important reset
   }
 };
 
 </script>
 
 <script>
-/* =========================
-   THREAD LOADER (SINGLE SOURCE OF TRUTH)
-========================= */
+/* THREAD LOADER */
 
 async function loadThread() {
 
   const { data, error } = await supabaseClient
-.from("instant_input")
-.select("entry")
-.order("created_at", { ascending: false });
+    .from("instant_input")
+    .select("entry")
+    .order("created_at", { ascending: false });
 
   if (error) {
     console.error("Load error:", error);
@@ -304,11 +309,9 @@ async function loadThread() {
   }
 }
 
-/* INITIAL LOAD */
 loadThread();
-
-/* AUTO REFRESH */
 setInterval(loadThread, 5000);
+
 </script>
 
 </body>
