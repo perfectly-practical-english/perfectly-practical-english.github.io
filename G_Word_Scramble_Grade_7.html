@@ -915,7 +915,6 @@ span.highlighted::selection {
 }
 </style>
 
-
 </head>
 <body>
 
@@ -924,62 +923,52 @@ span.highlighted::selection {
 
 
 <div id="layout">
+  <!--<div class="header-bar">Unscramble</div> -->
 
-<section id="posSection">
-  <h3>Parts of Speech Quiz</h3>
-
-  <div class="top-bar">
-    <input type="text" id="name" placeholder="Enter your name">
-    <input type="text" id="id" placeholder="Enter your ID">
-    <button id="grammarsubmit" disabled>Submit</button>
-  </div>
-
-  <!-- SECTION SELECTOR -->
-  <div class="formRow">
-    <button type="button" id="sectionUp">▲</button>
-
-    <div id="sectionWheelContainer">
-      <div class="wheel"></div>
+  <!-- Scramble Section -->
+    <section id="scrambleSection">
+    <h3>Unscramble</h3>
+    <div class="top-bar">
+      <input type="text" id="scrambleName" placeholder="Name">
+      <input type="text" id="scrambleId" placeholder="ID Number">
+      <button id="scrambleSubmitBtn" disabled>Submit</button>
     </div>
 
-    <button type="button" id="sectionDown">▼</button>
+
+
+<div class="formRow">
+  <button type="button" id="sectionUp">▲</button>
+
+  <div id="sectionWheelContainer">
+    <div class="wheel"></div>
+  </div>
+
+  <button type="button" id="sectionDown">▼</button>
 
     <button
       type="button"
       id="sectionStart"
       disabled
     >Start</button>
-  </div>
+</div>
 
-  <!-- GAME / EXERCISE AREA -->
-  <div class="section quiz-container">
-    <h4></h4>
 
-    <div id="exercises"></div>
+    <div id="scrambleContainer"></div>
 
-    <!-- SCOREBOARD (INSIDE GAME, AT BOTTOM) -->
-    <div class="scoreboard" id="scoreboardContainer" style="display: none;">
-      <pre id="score"></pre>
-      <div id="result"></div>
 
-      <div class="action-buttons" id="scoreboardBtns" style="display: none;">
-        <button id="grammarCopyBtn">Copy</button>
-        <button id="grammarDownloadTxtBtn">↓TXT</button>
-        <button id="grammarDownloadPngBtn">↓PNG</button>
+    <div class="scoreboard" id="scrambleScoreboard"><pre id="scrambleScoreOutput"></pre>
+      <div class="action-buttons">
+        <button id="scrambleCopyBtn">Copy</button>
+        <button id="scrambleDownloadTextBtn">↓TXT</button>
+        <button id="scrambleDownloadPngBtn">↓PNG</button>
       </div>
     </div>
-  </div>
+  </section>
 
-</section>
-
-
-<!-- Copyright Footer Section -->
-<section id="copyrightSection">
-  <div class="footer-note copyright">
-    © 2026 Perfectly Practical English™. All rights reserved.
-  </div>
-</section>
-</div>
+  <!-- Copyright Footer Section -->
+  <section id="copyrightSection">
+    <div class="footer-note copyright">© 2026 Perfectly Practical English™. All rights reserved.</div>
+  </section>
 
 <!-- Floating read-aloud control bar -->
 <!-- <div id="readaloudControls">
@@ -1011,88 +1000,87 @@ async function resolveRaw(source) {
 }
 </script>
 
-
-
-
 <script>
 /* =========================================================
    STANDALONE SECTION VISIBILITY PATCH
-   (WITH REAL PLACEHOLDER SUPPORT)
+   (SCRAMBLE SECTION IS ALWAYS VISIBLE)
    ========================================================= */
 
 (function () {
-  const up = document.getElementById("sectionUp");
-  const down = document.getElementById("sectionDown");
-  const wheel = document.querySelector("#sectionWheelContainer .wheel");
-  const startBtn = document.getElementById("sectionStart");
 
-  if (!up || !down || !wheel || !startBtn) return;
+  /* 🔗 Declare dependencies here (ONE place, declarative) */
+  const SECTION_DEPENDENCIES = {
+    readingSection: ["#text1"],
+    mcSection: ["#mcContainer"],
+    fibSection: ["#fibContainer"],
 
-  function waitForSections() {
-    if (
-      !Array.isArray(window.SCRAMBLE_SECTIONS) ||
-      !Array.isArray(window.RAW_SECTIONS)
-    ) {
-      setTimeout(waitForSections, 50);
+    // 🔒 DO NOT AUTO-HIDE SCRAMBLE (it contains controls)
+    scrambleSection: [],
+
+    sequenceSection: ["#sequenceContainer"],
+
+    instructionsSectionReadingSpeaking: [
+      "#instructionsContainerReadingSpeaking"
+    ],
+    instructionsSectionWritingSpeaking: [
+      "#instructionsContainerWritingSpeaking"
+    ],
+
+    vocabSection: ["#wordTiles", "#definitionTiles"],
+    posSection: ["#instructions", "#exercises"]
+  };
+
+  function hasContent(el) {
+    return el && el.textContent.trim().length > 0;
+  }
+
+  function update(sectionId, selectors) {
+    const section = document.getElementById(sectionId);
+    if (!section) return;
+
+    // Empty dependency list = always visible
+    if (!selectors.length) {
+      section.style.display = "";
       return;
     }
 
-    /* ---------- PLACEHOLDER STATE ---------- */
-    window.SCRAMBLE_INDEX = -1;           // no selection yet
-    window.CURRENT_SECTION = null;
-    wheel.textContent = "Select a category.";
-    startBtn.disabled = true;
+    const visible = selectors.some(sel =>
+      hasContent(document.querySelector(sel))
+    );
 
-    /* ---------- START BUTTON ---------- */
-    startBtn.addEventListener("click", () => {
-      if (
-        window.SCRAMBLE_INDEX >= 0 &&
-        typeof window.startPOSSection === "function"
-      ) {
-        window.startPOSSection();
-      }
-    });
-
-    /* ---------- INDEX HANDLER ---------- */
-    function setIndex(index) {
-      if (index < 0) index = 0;
-      if (index >= window.RAW_SECTIONS.length) {
-        index = window.RAW_SECTIONS.length - 1;
-      }
-
-      window.SCRAMBLE_INDEX = index;
-      window.CURRENT_SECTION = window.RAW_SECTIONS[index];
-
-      const section = window.SCRAMBLE_SECTIONS[index];
-      wheel.textContent = section?.name || "";
-      startBtn.disabled = false;
-    }
-
-    /* ---------- NAVIGATION ---------- */
-    up.addEventListener("click", () => {
-      setIndex(
-        window.SCRAMBLE_INDEX < 0
-          ? 0
-          : window.SCRAMBLE_INDEX - 1
-      );
-    });
-
-    down.addEventListener("click", () => {
-      setIndex(
-        window.SCRAMBLE_INDEX < 0
-          ? 0
-          : window.SCRAMBLE_INDEX + 1
-      );
-    });
-
-    /* 🚫 DO NOT AUTO-SELECT ANY SECTION */
-    /* (this is what was killing the placeholder) */
+    section.style.display = visible ? "" : "none";
   }
 
-  waitForSections();
-})();
-</script>
+  function observe(sectionId, selectors) {
+    if (!selectors.length) return;
 
+    selectors.forEach(sel => {
+      const target = document.querySelector(sel);
+      if (!target) return;
+
+      new MutationObserver(() =>
+        update(sectionId, selectors)
+      ).observe(target, {
+        childList: true,
+        subtree: true,
+        characterData: true
+      });
+    });
+  }
+
+  function init() {
+    Object.entries(SECTION_DEPENDENCIES).forEach(
+      ([sectionId, selectors]) => {
+        update(sectionId, selectors);
+        observe(sectionId, selectors);
+      }
+    );
+  }
+
+  document.addEventListener("DOMContentLoaded", init);
+})();
+
+</script>
 
 
 
@@ -1127,491 +1115,565 @@ pngBtn.addEventListener('click', () => {
 }
 </script>
 
-<script>
-// ---------------------- Parts of Speech ----------------------
 
-const rawExercisesSource = `
+
+
+
+
+
+<script>
+// ---------------------- SCRAMBLE ----------------------
+const scrambleQuestionsSource = `
 
 ~Unit 1 – Family and Friends - Present Simple
-
-I usually |go| to the cinema with my friends on Saturday evenings.
-My brother |doesn’t| play video games after school.
-Sarah |listens to| music on her phone every morning.
-|Does| your cousin visit relatives on Sundays?
-We |are never| late for our first lesson.
-He |watches| TV series every weekend.
-What time |does| your mother usually start work?
-My friends |go shopping| in the city centre every Friday.
-I |don’t| often relax in the living room after dinner.
-|Do| you usually watch videos online in the evening?
-My grandmother |exercises| in the park every morning.
-I |don’t read| novels very often.
-Where |does| your best friend study after school?
-My sister |is| interested in science fiction films.
-We |have dinner| together at 7 p.m. every day.
-They |usually spend| holidays at their grandparents’ house.
-|Does| your uncle work in a hospital in town?
-I |don’t go out| during the week because I study.
-How often |do| your parents visit their friends?
-She |plays| tennis very well at school.
+I usually |go| to the cinema with my friends at the weekend.
+My brother |doesn’t| play video games in the evening.
+Sarah |listens to| music every day.
+|Does| your cousin spend time with family on Sundays?
+We |are never| late for school.
+He |watches| films every weekend.
+What time |does| your mother usually get up on weekdays?
+My friends |go shopping| every Friday afternoon.
+I |don’t| often relax at home after school.
+|Do| you usually listen to music on YouTube?
+My grandmother |exercises| in the morning.
+I |don’t read| books very often.
+Where |does| your best friend study English?
+My sister |is| interested in fantasy films.
+We |have dinner| at home every evening.
+They |usually spend| weekends with their grandparents.
+|Does| your uncle work in a restaurant downtown?
+I |don’t go out| a lot because I’m busy with school.
+How often |do| your parents visit your grandmother?
+She |plays| the guitar very well.
 
 ~Unit 2 – Food - Countable and Uncountable Nouns • Articles
-
-There is |some| cheese in the fridge.
-We don’t have |any| carrots for the soup.
-She bought |a packet of| rice at the supermarket.
-He wants |an| apple for his snack.
-There are |some| grapes in the bowl.
-We need |a bottle of| ketchup for dinner.
-There isn’t |any| sugar in the cupboard.
-I usually have |a sandwich| for breakfast.
-Can I have |some| juice, please?
-There are only |a few| bananas left on the table.
-We bought |a loaf of| bread and some jam.
-I don’t eat |much| chocolate.
-She made |a salad| with tomatoes and cucumber.
-There is |an| egg on the plate.
-We had |the| most delicious meal in the restaurant.
-How |many| bottles of water did you buy?
-How |much| milk is in the glass?
-They ordered |a pizza| and some fries.
-There aren’t |many| tomatoes in the fridge.
-He put |the| salt on the table.
+There is |some| milk in the fridge.
+We don’t have |any| onions for the soup.
+She bought |a packet of| spaghetti at the supermarket.
+He wants |an| omelette for breakfast.
+There are |some| strawberries in the bowl.
+We need |a bottle of| oil for the recipe.
+There isn’t |any| flour in the cupboard.
+I usually have |a sandwich| for lunch.
+Can I have |some| water, please?
+There are only |a few| eggs in the carton.
+We bought |a loaf of| bread and some butter.
+I don’t eat |much| fast food.
+She made |a salad| for lunch.
+There is |an| orange on the table.
+We had |the| best dessert in the restaurant.
+How |many| packets of crisps did you buy?
+How |much| lemonade is there in the bottle?
+They ordered |a pizza| and a salad.
+There aren’t |many| mushrooms in the fridge.
+He put |the| cheese on top of the pizza.
 
 ~Unit 3 – Work - Present Continuous • Present Simple vs Present Continuous
-
-My mother |is working| in her office today.
-The mechanic |repairs| bikes every morning.
-We |are doing| a group task this week.
-She |works| in a bank in the city centre.
-They |are talking| to the manager right now.
-My father |doesn’t work| on Sundays.
-The volunteers |are learning| French at the moment.
-He usually |makes| tea for everyone in the morning.
-I |am not working| this evening.
-The teacher |teaches| maths at our school.
-We |are preparing| for the presentation now.
-My uncle |works outside| every day in construction.
-The receptionist |is serving| guests at the moment.
-They |don’t work| on public holidays.
-I |am learning| new skills this month.
-She |does voluntary| work at the animal shelter.
-The builder |is putting| the shelves together now.
-My brother |doesn’t earn| enough money to travel.
-The students |are discussing| their answers now.
-He |works for| a small company in town.
+My mother |is working| from home today.
+The mechanic |repairs| cars every day.
+We |are doing| a project this week.
+She |works| in a supermarket.
+They |are talking| on the phone now.
+My father |doesn’t work| long hours.
+The volunteers |are learning| Spanish at the moment.
+He usually |makes| coffee for the office.
+I |am not working| this weekend.
+The teacher |teaches| children English.
+We |are preparing| for the meeting now.
+My uncle |works outside| every day.
+The receptionist |is serving| customers at the moment.
+They |don’t work| in large teams.
+I |am learning| practical skills this month.
+She |does voluntary| work every summer.
+The builder |is putting| the model together now.
+My brother |doesn’t earn| enough money to buy a car.
+The students |are discussing| their projects.
+He |works for| a company in town.
 
 ~Unit 4 – People - Comparative and Superlative Adjectives • Have to / Don’t Have to
-
-My brother is |taller| than my sister.
-This coat is |more comfortable| than that jacket.
-Anna is |the friendliest| student in our group.
-My new hairstyle is |shorter| than my old hairstyle.
-That was |the most interesting| book I read this year.
-My sister |has to| wear a school uniform every day.
-We |don’t have to| do homework at the weekend.
-These shoes are |better| than my old shoes.
-John is |more sociable| than his best friend.
-This is |the worst| restaurant in the street.
-You |have to| show your ticket at the entrance.
+My brother is |taller| than me.
+This jacket is |more comfortable| than that one.
+Anna is |the friendliest| person in our class.
+My new haircut is |shorter| than my old one.
+That was |the most interesting| film I watched this year.
+My sister |has to| wear a uniform at school.
+We |don’t have to| take driving lessons yet.
+These shoes are |better| than my old ones.
+John is |more sociable| than his cousin.
+This is |the worst| outfit in the shop.
+You |have to| get permission first.
 My haircut is |much shorter| than before.
-He is |the funniest| boy in our class.
+He is |the funniest| person in the class.
 Those boots are |more expensive| than the trainers.
-I |don’t have to| wake up early tomorrow.
-My aunt is |older| than my uncle.
-This dress is |the most stylish| in the shop.
-My cousin is |more confident| this year.
-We |have to bring| our passports to the airport.
-That actor is |the most successful| in the country.
+I |don’t have to| buy new clothes this month.
+My aunt is |older| than my father.
+This skirt is |the most stylish| one here.
+My cousin is |more confident| now.
+We |have to bring| our identity cards.
+That actor is |the most successful| actor in our country.
 
 ~Unit 5 – Education - Must / Mustn’t • Should / Shouldn’t • Past Simple
-
-Students |must| arrive before the lesson starts.
-You |mustn’t| use your phone during exams.
-We |should| practise more before the test.
-He |shouldn’t| talk during the lesson.
-My classroom |was| on the second floor.
-They |were| at a science camp last summer.
-I |could| use a computer when I was eight.
-Students |must wear| school uniforms every day.
-You |shouldn’t| eat in the library.
-The science lab |was very| large and modern.
-We |couldn’t| finish the experiment yesterday.
-My teachers |were always| very supportive.
-You |mustn’t| run in the corridors.
-I |could use| a calculator in primary school.
-The canteen |wasn’t| open during holidays.
-We |should focus| on our revision plan.
-She |couldn’t| attend school yesterday.
-There |were| many students in the classroom.
-You |must study| before every test.
-The workshop |was interesting| for all students.
+Students |must| come to class on time.
+You |mustn’t| cheat in exams.
+We |should| revise for exams.
+He |shouldn’t| miss a class.
+My classroom |was| next to the library.
+They |were| at summer school last year.
+I |could| use an interactive whiteboard when I was ten.
+Students |must wear| a uniform.
+You |shouldn’t| run inside the school.
+The science lab |was very| modern.
+We |couldn’t| finish the project yesterday.
+My teachers |were always| helpful.
+You |mustn’t| be late.
+I |could use| a tablet when I was six.
+The canteen |wasn’t| open yesterday.
+We |should focus| on practical activities.
+She |couldn’t| attend the lecture.
+There |were| many pupils at the camp.
+You |must study| for the test.
+The workshop |was interesting|.
 
 ~Unit 6 – Health and Sport - Past Simple
-
-I |played| volleyball yesterday afternoon.
-She |won| her first race last year.
-We |didn’t go| swimming because it was cold.
-|Did| you watch the basketball game?
-The athlete |reached| the finish line first.
-I |wasn’t| interested in fitness before.
-She |trained| hard before the competition.
-|Did| your sister join the sports club?
-They |didn’t get| enough rest after the match.
-I |thought| running was very tiring.
-After the game, we |rested| at home.
-My cousin |went| cycling last weekend.
-What |did| you do after practice?
-I |couldn’t stand| jogging in the morning before.
-The race |started| at 10 a.m.
-We |didn’t score| any goals in the match.
-|Did| she win the competition?
-My friend |tried| swimming for the first time.
-I |didn’t enjoy| the training session.
-We |watched| a sports documentary.
+I |played| badminton yesterday.
+She |won| the competition last year.
+We |didn’t go| cycling because it rained.
+|Did| you watch the football match?
+The climber |reached| the peak safely.
+I |wasn’t| into rugby before.
+She |trained| every day before the race.
+|Did| your brother join a gym?
+They |didn’t get| enough sleep.
+I |thought| kayaking was exciting.
+After the match, we |rested| for an hour.
+My cousin |went| sailing last summer.
+What |did| you do after training?
+I |couldn’t stand| team sports before.
+The marathon |started| at nine.
+We |didn’t score| any points.
+|Did| she win the gold medal?
+My friend |tried| yoga.
+I |didn’t enjoy| the workout.
+We |watched| a training video.
 
 ~Unit 7 – Travel - Present Perfect
-
-I |have never| travelled by train abroad.
-|Have| you ever been to Japan?
-My parents |have already| bought the tickets.
-We |have just| arrived at the hotel.
-She |hasn’t| booked her flight yet.
-|Have| you ever stayed in a hotel before?
-They |haven’t made| a reservation yet.
-We |have checked in| at the airport already.
-My brother |has never| flown on a plane.
-|Has| your friend packed his suitcase yet?
-I |have just| finished packing.
-|Have| you ever visited Paris?
-We |have just received| our boarding passes.
-The passengers |haven’t arrived| at the gate yet.
-I |haven’t been| to that city yet.
-She |has just made| a travel plan.
-We |have never| travelled by ferry.
-|Have| you finished your homework yet?
-We |have already crossed| the border.
-I |have already visited| several museums.
+I |have never| been on a plane.
+|Have| you ever visited another country?
+My parents |have already| booked the hotel.
+We |have just| arrived at the airport.
+She |hasn’t| gone snorkelling yet.
+|Have| you ever stayed in a youth hostel?
+They |haven’t made| the arrangements yet.
+We |have checked in| already.
+My brother |has never| travelled by ferry.
+|Has| your friend booked a flight yet?
+I |have just| got off the train.
+|Have| you ever gone on an adventure holiday?
+We |have just received| our room key.
+The passengers |haven’t arrived| yet.
+I |haven’t been| to the reception desk yet.
+She |has just made| a reservation.
+We |have never| stayed at a campsite.
+|Have| you finished packing?
+We |have already crossed| the road.
+I |have already visited| local markets.
 
 ~Unit 8 – Nature - Future with will • Be going to
+I think the weather |will be| sunny tomorrow.
+Look at those clouds! It |is going to| rain.
+Scientists think some animals |will disappear| in the future.
+We |are going to| plant trees next weekend.
+I |will protect| the environment.
+Global warming |will raise| temperatures.
+My family |is going to go| walking.
+|Are| you going to visit the aquarium?
+I don’t think people |will| stop climate change quickly.
+We |won’t waste| water.
+There |is going to be| thunder and lightning.
+What |are| you going to do this weekend?
+We |are going to use| public transport next week.
+The government |is going to build| wind farms.
+Dolphins |will survive| in protected areas.
+|Will| it snow tomorrow?
+We |will buy| recycled things.
+My brother |is going to turn off| the light.
+I think sea ice |will melt|.
 
-I think it |will be| cold tomorrow.
-Look at the sky! It |is going to| snow.
-Scientists say some species |will disappear| soon.
-We |are going to| recycle more this year.
-I |will protect| animals in the future.
-Pollution |will increase| if we do nothing.
-My family |is going to go| hiking next weekend.
-|Are| you going to plant trees tomorrow?
-I don’t think people |will| stop pollution quickly.
-We |won’t waste| electricity anymore.
-There |is going to be| a storm tonight.
-What |are| you going to do after school?
-We |are going to use| bikes instead of cars.
-The city |is going to build| new parks.
-Birds |will survive| in protected areas.
-|Will| it rain this evening?
-We |will buy| eco-friendly products.
-My brother |is going to turn off| the TV now.
-I think temperatures |will rise| in summer.
 
 `;
 
-(async function initQuiz() {
-  // Resolve raw text FIRST
-  const rawExercises = await resolveRaw(rawExercisesSource);
+</script>
 
-// ===============================
-// PARSE ~Section blocks
-// ===============================
-function parseRawExerciseSections(raw) {
-  const sections = [];
-  let current = null;
+<script>
+/* =====================================================
+   SECTION RECOGNITION ENGINE (SCRAMBLE)
+   ===================================================== */
 
-  raw.split(/\r?\n/).forEach(line => {
-    const text = line.trim();
-    if (!text) return;
+(function () {
 
-    // "~" starts a new section (grammar only)
-    if (text[0] === "~") {
-      current = {
-        name: text.slice(1).trim(),
-        exercises: []
-      };
-      sections.push(current);
-      return;
-    }
+  // 1️⃣ Freeze raw source
+  window.__SCRAMBLE_RAW__ = scrambleQuestionsSource;
 
-    // any other non-empty line is an exercise
-    if (current) {
-      current.exercises.push(text);
-    }
-  });
-
-  return sections;
-}
-
-// Parse raw exercise text into full section objects
-window.RAW_SECTIONS = parseRawExerciseSections(rawExercises);
-
-// Use first section’s first line as intro (section-safe)
-const firstSection = window.RAW_SECTIONS[0];
-if (firstSection && firstSection.exercises.length) {
-  const instructionsEl = document.getElementById("instructions");
-  if (instructionsEl) {
-    instructionsEl.textContent = firstSection.exercises[0];
-  }
-}
-
-// Expose section names ONLY to the selector wheel
-window.SCRAMBLE_SECTIONS = window.RAW_SECTIONS.map((s, i) => ({
-  id: i,
-  name: s.name
-}));
-
-// Initial selector index
-window.SCRAMBLE_INDEX = 0;
-
-
-function parseExercise(exerciseText, index) {
-  let prompt = `${index}.`;
-  let sentence = exerciseText;
-
-  // If a prompt delimiter exists, split safely
-  if (exerciseText.includes(' - ')) {
-    const parts = exerciseText.split(' - ');
-    prompt = `${index}. ${parts[0]}`;
-    sentence = parts.slice(1).join(' - ');
+  // 2️⃣ Parse ~Section blocks
+  function parseSections(raw) {
+    return raw
+      .split(/\n(?=~)/)
+      .map(b => b.trim())
+      .filter(b => b.startsWith("~"))
+      .map(block => {
+        const lines = block.split('\n');
+        const name = lines.shift().replace(/^~+/, '').trim();
+        const text = lines.join('\n').trim();
+        return { name, text };
+      });
   }
 
-  if (!sentence) sentence = exerciseText;
+  window.SCRAMBLE_SECTIONS = parseSections(window.__SCRAMBLE_RAW__);
+window.SCRAMBLE_INDEX = -1;
 
-  // Tokenize: pipes > words > spaces > punctuation
-  const tokens = sentence.match(
-    /\|\s*[^|]+\s*\||\s+|[A-Za-z0-9']+|[.,!?;]/g
-  ) || [];
+  // 3️⃣ Section change dispatcher (canonical)
+window.setScrambleSection = function (index) {
+  if (!Array.isArray(window.SCRAMBLE_SECTIONS)) return;
+  if (index < 0 || index >= window.SCRAMBLE_SECTIONS.length) return;
 
-  const parsedSentence = tokens.map(token => {
-    // ✅ Pipe-delimited = correct answer
-    if (token.startsWith('|') && token.endsWith('|')) {
-      const clean = token.slice(1, -1);
-      return `<span class="word" data-correct="true">${clean}</span>`;
-    }
+  window.SCRAMBLE_INDEX = index;
 
-    return token.trim()
-      ? `<span>${token}</span>`
-      : token;
-  }).join('');
+  const section = window.SCRAMBLE_SECTIONS[index];
 
-  return `${prompt} ${parsedSentence}`;
+  // ✅ FORCE header update (this is what you're missing)
+  const wheel = document.querySelector("#sectionWheelContainer .wheel");
+if (wheel && section && section.name) {
+  wheel.textContent = section.name;
 }
 
 
-function renderExercises() {
-  const exercisesContainer = document.getElementById('exercises');
-
-// allow rendering once exercises exist
-if (!window.quizExercises || window.quizExercises.length === 0) {
-  exercisesContainer.innerHTML = "";
-  return;
-}
-
-  exercisesContainer.innerHTML = "";
-
-  const section = window.RAW_SECTIONS[window.SCRAMBLE_INDEX];
-  if (!section) return;
-
-  // ✅ SECTION HEADER (this is what was missing)
-  const header = document.createElement('div');
-  header.className = 'section-header';
-  header.textContent = section.name;
-  header.style.fontWeight = 'bold';
-  header.style.marginBottom = '8px';
-  header.style.color = '#1976d2';
-
-  exercisesContainer.appendChild(header);
-
-  const exercises = window.quizExercises || [];
-  if (!exercises.length) return;
-
-  exercises.forEach((exercise, index) => {
-    const parsedExercise = parseExercise(exercise, index + 1);
-
-    const exerciseContainer = document.createElement('div');
-    exerciseContainer.classList.add('exercise-container');
-
-    const sentence = document.createElement('div');
-    sentence.classList.add('sentence');
-    sentence.innerHTML = parsedExercise;
-
-    exerciseContainer.appendChild(sentence);
-    exercisesContainer.appendChild(exerciseContainer);
-  });
-
-  document.querySelectorAll('.word').forEach(word => {
-    word.addEventListener('click', handleWordClick);
-  });
-}
-
-window.startPOSSection = function () {
-  const section = window.RAW_SECTIONS?.[window.SCRAMBLE_INDEX];
-  if (!section) return;
-
-  // feed the engine
-  window.quizExercises = section.exercises.slice(1);
-
-  // reset engine state
-  window.currentExerciseIndex = 0;
-  window.score = 0;
-
-  // 🔥 RENDER FIRST (DOM MUST EXIST)
-  renderExercises();
-
-  // 🔥 THEN INITIALIZE SCORING STATE
-  window.correctAnswers = 0;
-  window.scoreSubmitted = false;
-  window.pipedWordsCount =
-    document.querySelectorAll('#exercises .word[data-correct="true"]').length;
+  // optional: still store pending section
+  if (section) {
+    window.PENDING_SCRAMBLE_SECTION = section;
+  }
 };
 
-// ---------------------- WORD CLICK (SELECTION ONLY) ----------------------
-function handleWordClick(event) {
-  const word = event.target;
 
-  if (window.scoreSubmitted) return;
-  if (!word.classList.contains('word')) return;
+// 4️⃣ INITIAL SECTION (SAFE, AFTER LISTENERS EXIST)
+document.addEventListener("DOMContentLoaded", () => {
+  // whatever you already do here:
+  // parsing, setup, observers, etc.
 
-  word.classList.toggle('selected-word');
-}
+  // 🔽 ADD THIS AT THE END
+  const wheel = document.querySelector("#sectionWheelContainer .wheel");
+  if (wheel) {
+    wheel.textContent = "Select a category.";
+  }
+});
 
 
-// ---------------------- INITIAL RENDER ----------------------
 
-// NOTE: Do NOT call updateScore() here — prevents extra score at top
-// ---------------------- SUBMISSION ----------------------
+})();
 
-// Grab elements
-const nameInput = document.getElementById('name');
-const idInput = document.getElementById('id');
-const submitBtn = document.getElementById('grammarsubmit');
+/* ===============================
+   SECTION SELECTOR BUTTON WIRING
+   =============================== */
 
-// Enable/disable submit button based on inputs
-function checkInputs() {
-  submitBtn.disabled = !(nameInput.value && idInput.value);
-}
+(function () {
 
-nameInput.addEventListener('input', checkInputs);
-idInput.addEventListener('input', checkInputs);
+  const up = document.getElementById("sectionUp");
+  const down = document.getElementById("sectionDown");
 
-submitBtn.addEventListener('click', function () {
-  const name = nameInput.value.trim();
-  const id = idInput.value.trim();
+  if (!up || !down) return;
 
-  if (!name || !id) {
-    alert('Please enter both your name and ID before submitting.');
+  function clampAndSet(index) {
+    if (!Array.isArray(window.SCRAMBLE_SECTIONS)) return;
+    if (index < 0) index = 0;
+    if (index >= window.SCRAMBLE_SECTIONS.length) {
+      index = window.SCRAMBLE_SECTIONS.length - 1;
+    }
+    window.setScrambleSection(index);
+  }
+
+  /* ===============================
+     START BUTTON ENABLE LOGIC
+     =============================== */
+
+  const startBtn = document.getElementById("sectionStart");
+  const nameInput = document.getElementById("scrambleName");
+const idInput = document.getElementById("scrambleId");
+
+
+  if (startBtn && nameInput && idInput) {
+
+    function updateStartState() {
+      const hasSection =
+        typeof window.SCRAMBLE_INDEX === "number" &&
+        window.SCRAMBLE_INDEX >= 0;
+
+      const hasName = nameInput.value.trim().length > 0;
+      const hasId = idInput.value.trim().length > 0;
+
+      startBtn.disabled = !(hasSection && hasName && hasId);
+    }
+
+    nameInput.addEventListener("input", updateStartState);
+    idInput.addEventListener("input", updateStartState);
+
+    // wrap existing selector
+// wrap existing selector
+const originalSet = window.setScrambleSection;
+window.setScrambleSection = function (index) {
+  originalSet(index);
+  updateStartState();
+};
+
+updateStartState();
+
+/* ===============================
+   START BUTTON CLICK HANDLER
+   =============================== */
+startBtn.addEventListener("click", () => {
+  if (
+    typeof window.SCRAMBLE_INDEX !== "number" ||
+    window.SCRAMBLE_INDEX < 0
+  ) {
     return;
   }
 
-  // ✅ COUNT TOTAL PIPED WORDS
-  const totalPiped = document.querySelectorAll(
-    '#exercises .word[data-correct="true"]'
-  ).length;
+  const section = window.SCRAMBLE_SECTIONS[window.SCRAMBLE_INDEX];
+  if (!section) return;
 
-  // ✅ COUNT USER-SELECTED PIPED WORDS
-  const selectedCorrect = document.querySelectorAll(
-    '#exercises .word[data-correct="true"].selected-word'
-  ).length;
+window.renderScrambleFromSection(section.text);
 
-  // ✅ LOCK SCORE
-  window.correctAnswers = selectedCorrect;
-  window.pipedWordsCount = totalPiped;
-  window.scoreSubmitted = true;
 
-  const percentage =
-    totalPiped > 0
-      ? ((selectedCorrect / totalPiped) * 100).toFixed(2)
-      : '0.00';
-
-  const date = new Date();
-  const dateString =
-    `${String(date.getDate()).padStart(2,'0')}/` +
-    `${String(date.getMonth()+1).padStart(2,'0')}/` +
-    `${String(date.getFullYear()).slice(-2)}, ` +
-    `${String(date.getHours()).padStart(2,'0')}:` +
-    `${String(date.getMinutes()).padStart(2,'0')}`;
-
-  const filename = window.location.pathname.split('/').pop();
-  const section = 'Parts of Speech';
-
-  const resultText =
-    `Filename: ${filename}` +
-    `|Section: ${section}` +
-    `|Name: ${name}` +
-    `|ID: ${id}` +
-    `|Date: ${dateString}` +
-    `|Score: ${selectedCorrect} / ${totalPiped}` +
-    `|${percentage}%`;
-
-  document.getElementById('result').textContent = resultText;
-document.getElementById('scoreboardContainer').style.display = 'block';
-document.getElementById('scoreboardBtns').style.display = 'flex';
-
-// SEND TO SUPABASE
-window.saveResult(resultText);
+  console.log("▶ Start pressed — section loaded:", section.name);
 });
-  // ---------------------- EXPORT ACTIONS ----------------------
 
-  document.getElementById('grammarCopyBtn').addEventListener('click', () => {
-    navigator.clipboard.writeText(
-      document.getElementById('result').textContent
-    ).then(() => alert('Score copied to clipboard!'));
-  });
+}
 
-  document.getElementById('grammarDownloadTxtBtn').addEventListener('click', () => {
-    const blob = new Blob(
-      [document.getElementById('result').textContent],
-      { type: 'text/plain' }
+
+
+  // ▲ previous
+up.addEventListener("click", () => {
+  if (window.SCRAMBLE_INDEX === -1) {
+    window.setScrambleSection(0);
+  } else {
+    window.setScrambleSection(window.SCRAMBLE_INDEX - 1);
+  }
+});
+
+  // ▼ next
+down.addEventListener("click", () => {
+  if (window.SCRAMBLE_INDEX === -1) {
+    window.setScrambleSection(0);
+  } else {
+    window.setScrambleSection(window.SCRAMBLE_INDEX + 1);
+  }
+});
+})();
+
+
+</script>
+
+<script>
+
+const scrambleContainer = document.getElementById('scrambleContainer');
+let scrambleQuestions = [];
+
+(() => {
+  // ✅ Resolve raw text (no async needed)
+  const raw = scrambleQuestionsSource;
+(function () {
+
+window.renderScrambleFromSection = function (text) {
+  scrambleContainer.innerHTML = "";
+  scrambleQuestions = text.split('\n').filter(Boolean);
+
+  scrambleQuestions.forEach((s, i) => {
+    const div = document.createElement('div');
+    div.style.marginBottom = '8px';
+
+    const tokens = s.match(/[\w'-]+|[.,!?;:"“”‘’()]/g) || [];
+    const words = tokens
+      .filter(t => /\w/.test(t))
+      .sort(() => Math.random() - 0.5);
+
+    const tileEls = [];
+
+    div.innerHTML = `<strong>${i + 1}. </strong>`;
+
+    tokens.forEach(tok => {
+      const span = document.createElement('span');
+      if (/\w/.test(tok)) {
+        span.textContent = words.shift();
+        span.className = 'word-tile';
+        tileEls.push(span);
+      } else {
+        span.textContent = tok;
+      }
+      div.appendChild(span);
+      div.appendChild(document.createTextNode(' '));
+    });
+
+    scrambleContainer.appendChild(div);
+
+    let selected = null;
+    tileEls.forEach(tile =>
+      tile.addEventListener('click', () => {
+        if (!selected) {
+          selected = tile;
+          tile.classList.add('selected');
+          return;
+        }
+        if (selected === tile) {
+          selected.classList.remove('selected');
+          selected = null;
+          return;
+        }
+        const tmp = selected.textContent;
+        selected.textContent = tile.textContent;
+        tile.textContent = tmp;
+        selected.classList.remove('selected');
+        selected = null;
+      })
     );
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = 'score.txt';
-    link.click();
   });
+};
 
-document.getElementById('grammarDownloadPngBtn').addEventListener('click', () => {
-  const resultEl = document.getElementById('result');
+// ❌ DO NOT render on selection change
+let PENDING_SCRAMBLE_SECTION = null;
 
-  // Create temporary wrapper
-  const wrapper = document.createElement('div');
-  wrapper.style.background = '#ffffff';
-  wrapper.style.padding = '10px';
-  wrapper.style.display = 'inline-block';
-  wrapper.style.fontFamily = getComputedStyle(resultEl).fontFamily;
-  wrapper.style.fontSize = getComputedStyle(resultEl).fontSize;
-  wrapper.style.color = getComputedStyle(resultEl).color;
-
-  // Clone result text
-  const clone = resultEl.cloneNode(true);
-  wrapper.appendChild(clone);
-
-  // Temporarily add to DOM
-  document.body.appendChild(wrapper);
-
-  html2canvas(wrapper, {
-    backgroundColor: '#ffffff'
-  }).then(canvas => {
-    const link = document.createElement('a');
-    link.href = canvas.toDataURL('image/png');
-    link.download = 'score.png';
-    link.click();
-
-    // Clean up
-    document.body.removeChild(wrapper);
-  });
+window.addEventListener("scramble:sectionchange", (e) => {
+  if (!e.detail) return;
+  PENDING_SCRAMBLE_SECTION = e.detail; // { index, name, text }
 });
+
+
+
 
 })();
+
+(function () {
+
+  const wheel = document.querySelector('#sectionWheelContainer .wheel');
+  if (!wheel) return;
+
+  function updateSectionSelector(e) {
+    if (!e.detail || typeof e.detail.name !== "string") return;
+    wheel.textContent = e.detail.name;
+  }
+
+  document.removeEventListener(
+    "scramble:sectionchange",
+    updateSectionSelector
+  );
+
+  document.addEventListener(
+    "scramble:sectionchange",
+    updateSectionSelector
+  );
+
+  // 🔥 IMMEDIATE SYNC (this is the missing piece)
+  if (
+    Array.isArray(window.SCRAMBLE_SECTIONS) &&
+    typeof window.SCRAMBLE_INDEX === "number" &&
+    window.SCRAMBLE_SECTIONS[window.SCRAMBLE_INDEX]
+  ) {
+    wheel.textContent =
+      window.SCRAMBLE_SECTIONS[window.SCRAMBLE_INDEX].name;
+  }
+
+})();
+
+
+
+  // ✅ Enable submit AFTER render (inline version)
+  const nameInput = document.getElementById('scrambleName');
+  const idInput = document.getElementById('scrambleId');
+  const submitBtn = document.getElementById('scrambleSubmitBtn');
+
+window.scrambleSubmitted = false;
+
+function checkEnableSubmit() {
+
+  // 🔒 stay disabled forever after submit
+  if (scrambleSubmitted) {
+    submitBtn.disabled = true;
+    return;
+  }
+
+  submitBtn.disabled =
+    !(nameInput.value.trim() && idInput.value.trim());
+}
+
+nameInput.addEventListener('input', checkEnableSubmit);
+idInput.addEventListener('input', checkEnableSubmit);
+
+checkEnableSubmit(); // initialize state
+})();
+
+// ---------------------- SUBMIT ----------------------
+document.getElementById('scrambleSubmitBtn').addEventListener('click', () => {
+  const filename = window.location.pathname.split('/').pop();
+  const nm = document.getElementById('scrambleName').value.trim();
+  const id = document.getElementById('scrambleId').value.trim();
+
+  const dateStr = new Date().toLocaleString('en-GB', {
+    day: '2-digit',
+    month: '2-digit',
+    year: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  });
+
+  // Only divs with word tiles
+  const divs = Array.from(scrambleContainer.children).filter(div => div.querySelector('.word-tile'));
+  const correctSentences = scrambleQuestions.map(
+    s => s.match(/[\w'-]+|[.,!?;:"“”‘’()]/g) || []
+  );
+
+  let score = 0;
+
+  divs.forEach((div, i) => {
+    const userWords = Array.from(div.querySelectorAll('.word-tile')).map(t => t.textContent);
+    const correctWords = correctSentences[i].filter(t => /\w/.test(t));
+    if (
+      userWords.length === correctWords.length &&
+      userWords.every((w, idx) => w === correctWords[idx])
+    ) score++;
+  });
+
+  const percentScramble = divs.length
+    ? ((score / divs.length) * 100).toFixed(1)
+    : '0.0';
+
+  const scoreText = `${filename}|Scramble|${nm}|${id}|${dateStr}|${score}/${divs.length}|${percentScramble}%`;
+
+
+  const scoreOutput = document.getElementById('scrambleScoreOutput');
+  scoreOutput.textContent = scoreText;
+  document.getElementById('scrambleScoreboard').style.display = 'block';
+window.saveResult(document.getElementById('scrambleScoreOutput').textContent)
+  .then(() => console.log("✅ Sent scoreboard to Supabase"))
+  .catch(err => console.error("❌ Supabase upload failed:", err));
+scrambleSubmitted = true;
+document.getElementById('scrambleSubmitBtn').disabled = true;
+});
+
+// Copy / download
+setupCopyDownload(
+  document.getElementById('scrambleScoreOutput'),
+  document.getElementById('scrambleCopyBtn'),
+  document.getElementById('scrambleDownloadTextBtn'),
+  document.getElementById('scrambleDownloadPngBtn'),
+  'scramble_score'
+);
 </script>
+
+
+
+
+
+
 
 <script>
 
@@ -1627,9 +1689,6 @@ document.getElementById('grammarDownloadPngBtn').addEventListener('click', () =>
   </script>
 
 
-
-
-
 <script>
 /* =========================
    Buttons
@@ -1638,8 +1697,7 @@ const highlightBtn = document.getElementById('highlightSelected');
 const copyBtn = document.getElementById('copySelected');
 const restartBtn = document.getElementById('restartBtn');
 const pauseResumeBtn = document.getElementById('pauseResumeBtn');
-const readStartBtn = document.getElementById('startBtn');
-
+const startBtn = document.getElementById('startBtn');
 
 /* =========================
    State & Voices
@@ -1805,7 +1863,7 @@ function speakDialog(text) {
 /* =========================
    START
 ========================= */
-readStartBtn.addEventListener('click', () => {
+startBtn.addEventListener('click', () => {
   speechSynthesis.cancel();
   isPaused = false;
   pauseResumeBtn.textContent = '⏸';
@@ -1849,146 +1907,8 @@ restartBtn.addEventListener('click', () => {
   speechSynthesis.cancel();
   isPaused = false;
   pauseResumeBtn.textContent = '⏸';
-  readStartBtn.click();
+  startBtn.click();
 });
-azqq</script>
-
-<script>
-  window.OVERLAY_ENABLED = false;
-
-  (function(){
-    if (window.OVERLAY_ENABLED === true) return; // <<< stops the overlay from running
-
-    /* =========================================
-       1. RAW TEXT BLOCK — organized by team
-       ========================================= */
-
-    const rawText = (function(){/*
-    ~Team A List~
-    |Team A|11Phapmuan|12Piyanun|13Chinpasut|15Theetat|17Pasit/Patit|
-    |Team A|11Piyawarin|12Thanatphat|13Warawat|15Thanakorn|17Ronnakrit|
-    |Team A|11Thanisorn|12Papon|13Supasan|15Nunthapat|17Thanatthat|
-    |Team A|11Nanon|12Phunakorn|13Kuariwin|15Noppathorn|17Korrerk|
-    |Team A|11Chayakarn|12Sukhaphat|13Patawee|15Krittaphat|17Pothsawee|
-    |Team A|11Arichai|12Athiwat|13Kawinpob|15Pudh|17Korapat|
-    |Team A|11Withawich|12Teerapich|13Chinnawat|15Tanaphat|17Pakorn|
-    |Team A|11Theeraphat|12Akkhardwin|13Phattadon|15Nop|17Tashtada|
-
-    ~Team B List~
-    |Team B|11KornKamol|12Achiravit|13Pavee|15Pitchayapoom|17Denthanat|
-    |Team B|11Karn/Atis|12Puttipat|13Tanaphon|15Pannathorn|17Phurithat|
-    |Team B|11Songsathit|12Wongsapat|13Nathavee|15Thanadech|17Sanant|
-    |Team B|11Prachaya|12Supatat|13Kantaphon|15Supakorn|17Theetat|
-    |Team B|11Thanapat|12Parnasarn|13Kittitee|15Nuttapong|17Kanoknat|
-    |Team B|11Puripat|12Akrit|13Phuthaninphat|15Aritouch|17Krittitee|
-    |Team B|11Papeem|12Techin|13Phupa|15Mangkorn|17Kanapos|
-    */}).toString()
-    .replace(/^[^\/]+\/\*!?/, '')
-    .replace(/\*\/[^\/]+$/, '')
-    .trim();
-
-
-    /* =========================================
-       2. Parse teams
-       ========================================= */
-
-    const teamA = [];
-    const teamB = [];
-    let currentTeam = null;
-
-    rawText.split(/\r?\n/).forEach(line => {
-      line = line.trim();
-      if (!line) return;
-
-      if (/~Team A List~/i.test(line)) currentTeam = "A";
-      else if (/~Team B List~/i.test(line)) currentTeam = "B";
-      else if (currentTeam === "A") teamA.push(line.replace(/\//g,"•"));
-      else if (currentTeam === "B") teamB.push(line.replace(/\//g,"•"));
-    });
-
-    const allLines = teamA.concat(teamB);
-
-
-    /* =========================================
-       3. OVERLAY EXCLUSION CONFIG
-       ========================================= */
-
-    const RAW_EXCLUDED_DIVS = `
-    <div id="dynamicInputsReadingSpeaking">
-    <div id="instructionsContainerReadingSpeaking">
-    <div id="dynamicInputsWritingSpeaking">
-    <div id="instructionsContainerWritingSpeaking">
-    <div id="outputContainerReadingSpeaking">
-    <div id="outputContainerWritingSpeaking">
-    `;
-
-    const OVERLAY_EXCLUSIONS = [
-      ...RAW_EXCLUDED_DIVS.matchAll(/id="([^"]+)"/g)
-    ].map(m => `#${m[1]}`);
-
-
-    /* =========================================
-       4. Overlay engine
-       ========================================= */
-
-    const numberPattern = /^(?:Question\s*)?\d+[\.\)\:\-]/i;
-
-    function isExcluded(el) {
-      if (OVERLAY_EXCLUSIONS.some(sel => el.closest(sel))) return true;
-      if (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT') return true;
-      return false;
-    }
-
-    function createOverlay(numberEl, line) {
-      if (numberEl.dataset.overlayApplied) return;
-
-      const overlayDiv = document.createElement("div");
-      overlayDiv.style.fontSize = "10px";
-      overlayDiv.style.lineHeight = "10px";
-      overlayDiv.style.color = "#1976d2";
-      overlayDiv.style.fontWeight = "bold";
-      overlayDiv.style.pointerEvents = "none";
-      overlayDiv.style.marginBottom = "2px";
-      overlayDiv.textContent = line;
-
-      numberEl.parentNode.insertBefore(overlayDiv, numberEl);
-      numberEl.dataset.overlayApplied = "1";
-    }
-
-    function scanAndAssignOverlays() {
-      const numberEls = [];
-
-      document.querySelectorAll("body *").forEach(el => {
-        if (isExcluded(el)) return;
-        if (el.childElementCount !== 0) return;
-
-        const text = el.textContent.trim();
-        if (!numberPattern.test(text)) return;
-
-        numberEls.push(el);
-      });
-
-      numberEls.forEach((el, index) => {
-        const line =
-          (teamA.length && teamB.length)
-            ? (index % 2 === 0
-                ? teamA[Math.floor(Math.random() * teamA.length)]
-                : teamB[Math.floor(Math.random() * teamB.length)])
-            : allLines[Math.floor(Math.random() * allLines.length)];
-
-        createOverlay(el, line);
-      });
-    }
-
-
-    /* =========================================
-       5. Run
-       ========================================= */
-
-    scanAndAssignOverlays();
-    setInterval(scanAndAssignOverlays, 700);
-
-  })();
 </script>
 
 
@@ -2039,6 +1959,72 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 
+<script>
+// == USER HIGHLIGHT TOOL ==
+
+// Add highlight / unhighlight stylesheet
+const style = document.createElement('style');
+style.textContent = `
+  .highlight {
+    background-color: yellow;
+  }
+`;
+document.head.appendChild(style);
+
+// Create the highlight button
+const highlightBtn = document.createElement('button');
+highlightBtn.textContent = 'Highlight/Unhighlight';
+highlightBtn.style.position = 'fixed';
+highlightBtn.style.bottom = '20px';
+highlightBtn.style.right = '20px';
+highlightBtn.style.zIndex = '9999';
+highlightBtn.style.padding = '6px 12px';
+highlightBtn.style.background = '#007bff';
+highlightBtn.style.color = '#fff';
+highlightBtn.style.border = 'none';
+highlightBtn.style.borderRadius = '4px';
+highlightBtn.style.cursor = 'pointer';
+
+document.body.appendChild(highlightBtn);
+
+// Highlight toggle function
+highlightBtn.addEventListener('click', () => {
+  const selection = window.getSelection();
+
+  if (selection.isCollapsed) {
+    alert('Select some text first!');
+    return;
+  }
+
+  const range = selection.getRangeAt(0);
+  const selectedText = range.toString();
+
+  if (!selectedText.trim()) {
+    alert('No visible text selected.');
+    return;
+  }
+
+  // Check if selection is already highlighted
+  const parentSpan = range.startContainer.parentNode.closest('.highlight');
+
+  if (parentSpan) {
+    // Unhighlight: unwrap nodes
+    const text = selection.toString();
+    const unhighlighted = document.createTextNode(text);
+
+    parentSpan.replaceWith(unhighlighted);
+    selection.removeAllRanges();
+    return;
+  }
+
+  // Wrap new highlight
+  const span = document.createElement('span');
+  span.className = 'highlight';
+  range.surroundContents(span);
+
+  selection.removeAllRanges();
+});
+</script>
 
 <script>
 // ---------------------- UNIVERSAL PIPE-BASED FEEDBACK ----------------------
@@ -2163,6 +2149,7 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 </script>
 
+
 <script>
 
 (function(){
@@ -2178,7 +2165,7 @@ How to play...
 1. Enter Name and ID.
 2. Select a category.
 3. Click Start to begin.
-4. Select the correct word(s) for each exercise.
+4. Arrange the words in the correct order.
 5. Click Submit to see your score.
 6. Copy or download your score.
 
@@ -2462,62 +2449,77 @@ if (!supabaseClient) {
   console.error("❌ Supabase failed to initialize");
 }
 
-let lastUploadedScore = null;
+/* =========================
+   READ FUNCTION (NEW)
+   ========================= */
 
-window.saveResult = async function saveResult(text) {
-
-  if (!supabaseClient) {
-    console.error("❌ No Supabase client");
-    return;
-  }
-
-  // ======================
-  // NORMALIZE INPUT
-  // ======================
-  let cleaned;
-
-  try {
-    cleaned = (typeof text === "string")
-      ? text
-      : JSON.stringify(text);
-
-    cleaned = cleaned.replace(/\s+/g, " ").trim();
-
-  } catch (err) {
-    console.error("❌ Normalize error:", err);
-    return;
-  }
-
-  if (!cleaned) {
-    console.error("❌ Empty value blocked");
-    return;
-  }
-
-  if (cleaned === lastUploadedScore) {
-    console.log("⚠️ Duplicate blocked");
-    return;
-  }
-
-  lastUploadedScore = cleaned;
-
-  console.log("📤 INSERTING INTO scoreboard_raw:", cleaned);
-
+window.loadResults = async function () {
   const { data, error } = await supabaseClient
     .from("scoreboard_raw")
-    .insert([
-      { result_text: cleaned }
-    ])
-    .select();
+    .select("*")
+    .order("id", { ascending: false });
 
   if (error) {
-    console.error("❌ INSERT FAILED FULL ERROR:", error);
-    return;
+    console.error("SUPABASE READ ERROR:", error);
+    throw error;
   }
 
-  console.log("✅ INSERT SUCCESS:", data);
+  return data;
 };
 
+window.lastUploadedScore = null;
+
+/* =========================
+   WRITE FUNCTION (EXISTING)
+   ========================= */
+
+window.saveResult = async function (text) {
+
+  if (!supabaseClient) {
+    throw new Error("Supabase client missing");
+  }
+
+  const cleaned = String(text || "")
+    .replace(/\u00A0/g, " ")
+    .replace(/\r?\n/g, "\n")
+    .trim();
+
+  if (!cleaned) {
+    throw new Error("Nothing to upload");
+  }
+
+  console.log("📤 Uploading:", cleaned);
+
+  const payload = {
+    result_text: cleaned
+  };
+
+  // ✅ FIXED: proper Supabase v2 destructuring + explicit return payload
+  const { data, error } = await supabaseClient
+    .from("scoreboard_raw")
+    .insert(payload)
+    .select();
+
+  console.log("RAW RESPONSE:", { data, error });
+
+  if (error) {
+    console.error("SUPABASE ERROR:", error);
+    throw new Error(error.message || JSON.stringify(error));
+  }
+
+  window.lastUploadedScore = cleaned;
+
+  console.log("✅ Inserted:", data);
+
+  return data;
+};
 </script>
+
+
+
+</body>
+</html>
+
 
 </body>
 </html>
