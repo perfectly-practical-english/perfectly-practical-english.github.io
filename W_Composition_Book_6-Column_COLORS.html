@@ -1246,12 +1246,6 @@ function parseSectionedText(text){
        PATCH: EMPTY EDIT = DELETE
     ========================== */
 
-const originalRender = render;
-
-render = function(){
-  originalRender();
-  if (window.applyPOS) window.applyPOS();
-};
 
     const originalEdit = edit;
 
@@ -1379,15 +1373,25 @@ window.applyPOS = function applyPOS(){
   const posMap = buildPOSMap();
   window.POS_COLORS_INDEX = posMap;
 
-  if(!window.tiles || !Array.isArray(window.tiles)) return;
+  document.querySelectorAll(".tile").forEach(tileEl => {
+    const word = (tileEl.textContent || "").trim().toLowerCase();
+    const cls = posMap.get(word);
 
-  window.tiles.forEach(tile => {
-    const cls = posMap.get((tile.text || "").trim().toLowerCase());
-    tile.className = cls || "";
+    tileEl.classList.remove(
+      "color-Nouns",
+      "color-Verbs",
+      "color-Adjectives",
+      "color-Adverbs",
+      "color-Determiners",
+      "color-Pronouns",
+      "color-Prepositions",
+      "color-Conjunctions",
+      "color-Interjections"
+    );
+
+    if (cls) tileEl.classList.add(cls);
   });
 };
-
-
 
   applyPOS();
 
