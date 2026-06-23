@@ -70,6 +70,9 @@ textarea{
   user-select:text;
   touch-action:auto;
   line-height:1.2;
+  margin-left: 5px;
+
+
 }
 
 #leftInput{ width:var(--leftW); }
@@ -122,7 +125,7 @@ textarea{
 .rightSheet{
   left:var(--leftW);
   width:var(--rightW);
-  grid-template-columns:repeat(6,1fr);
+  grid-template-columns:repeat(1,1fr);
 }
 
 .cell{
@@ -141,6 +144,11 @@ textarea{
   outline:1px solid rgba(40,100,220,.8);
 }
 
+.leftSheet .cell{
+  padding-left: 8px;
+  align-items: center;
+}
+
 .tile{
   display:flex;
   align-items:center;
@@ -150,9 +158,9 @@ textarea{
 
   padding:3px 8px;
 
-  border:1px solid #666;
+  border:0px solid white;
   border-radius:6px;
-  background:white;
+  background:transparent;
 
   cursor:grab;
   user-select:none;
@@ -161,6 +169,9 @@ textarea{
   top:-1px;                 /* move tile up ~1px */
 
   overflow:hidden;
+
+  margin-left: 5px;
+
 }
 
 .visually-hidden{
@@ -187,147 +198,31 @@ textarea{
 <div id="rawTextSource" class="visually-hidden">
 
 ~Active Section Describing Favorite Foods
+1. Picnic Planning Conversation (4 people)
 
-|Pronouns|
-I
-you
-he
-she
-it
-we
-they
+Anna: I like this picnic, and I want to bring a basket of fruit with fresh apples, bananas, and grapes.
 
-|Verbs|
-like
-love
-want
-need
-have
-bring
-make
-buy
-take
-pack
-prepare
-carry
-cook
-bake
-eat
-drink
-share
-put
+Ben: I like this idea too, and I want to bring a bag of potato chips and a package of cookies.
+I will also take some lemonade and put it beside the fruit.
 
-chop
-slice
-dice
-mince
-peel
-grate
-shred
-mix
-stir
-whisk
-beat
-knead
-marinate
-boil
-simmer
-steam
-fry
-sauté
-roast
-grill
+Clara: I want to prepare something healthy, so I will make a fresh salad with lettuce and tomatoes.
+I like fruity food, so I will also bring some strawberries and watermelon.
 
-|Determiners|
-a
-an
-the
-this
-that
-these
-those
-some
-any
-many
-much
-a few
-a little
-lots of
-enough
+David: I like cooking, so I want to grill chicken and fry some pieces so they are hot and tasty.
 
-|Adjectives|
-favorite
-delicious
-yummy
-tasty
-fresh
-healthy
-homemade
-sweet
-salty
-sour
-spicy
-savory
-tangy
-fruity
-creamy
-crispy
-crunchy
-soft
-hot
-cold
+2. Party Planning Conversation (4 people)
 
-|Nouns|
-sandwich
-hamburger
-hot dog
-salad
-bag of potato chips
-basket of fruit
-apple
-banana
-orange
-grapes
-watermelon
-strawberries
-cheese
-crackers
-chicken
-cake
-brownies
-bottle of water
-juice
-lemonade
-soda
-carton of milk
-jar of jam
-package of cookies
-loaf of bread
-tub of ice cream
-cup of noodles
-box of cereal
-can of tuna
-packet of ketchup
+Emma: I love this party, and I want to bake a cake and some brownies.
+I like fruity flavors, so I will put strawberries on the cake.
+We need many drinks like juice, soda, and lemonade for everyone.
 
-|Prepositions|
-with
-without
-for
-in
-on
-at
-near
-beside
-inside
-outside
-under
+Ethan: I want to cook hamburgers and hot dogs because they are tasty and savory.
 
-|Conjunctions|
-and
-or
-but
-because
-so
+Fiona: I want to prepare a fresh salad bar, so I will slice and dice vegetables like carrots and cucumbers.
+I like healthy food, so I will also bring a basket of fruit with oranges and apples.
+
+George: I like cooking, so I want to roast chicken and boil noodles for the party.
+I will peel vegetables and steam them so they are soft and healthy.
 
 </div>
 
@@ -352,7 +247,7 @@ so
 <script>
 
 const ROWS = Math.ceil(1081 / 34);
-const COLS = 6;
+const COLS = 1;
 
 const leftEl = document.getElementById("left");
 const rightEl = document.getElementById("right");
@@ -628,11 +523,7 @@ const cls = window.POS_COLORS_INDEX?.get((tile.text || "").trim().toLowerCase())
 tileEl.className = "tile " + cls;
 
   tileEl.textContent=tile.text;
-const len = tile.text.length;
-const size = Math.max(8, 16 - (len - 10) * 0.5);
-
-tileEl.style.fontSize = size + "px";
-
+tileEl.style.fontSize = "15px";
 tileEl.onclick=(e)=>{
 
   e.stopPropagation();
@@ -1063,8 +954,7 @@ function parseSectionedText(text){
       .trim();
 
     activeSection.body
-      .map(line => line.trim())
-      .filter(Boolean)
+.map(line => line)
       .filter(line =>
         !(line.startsWith("|") && line.endsWith("|")) &&
         !(line.startsWith("~"))
@@ -1074,7 +964,7 @@ function parseSectionedText(text){
 
   const neededRows = Math.ceil(words.length / COLS);
 
-const TOP_MARGIN = 10;
+const TOP_MARGIN = 0;
 
 tiles = words.map((word, index) => {
   const row = Math.floor(index / COLS);
