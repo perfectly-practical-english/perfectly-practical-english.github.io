@@ -85,7 +85,7 @@ button {
   cursor: pointer;
   user-select: none;
 
-  white-space: nowrap;
+white-space: normal;
 
   transition: background 0.15s ease, transform 0.08s ease;
 }
@@ -251,26 +251,41 @@ input[type=text] {
 
 .sentence {
   position: absolute;
+  display: inline-block;
+
   font-size: 15px;
   font-weight: 600;
-  white-space: nowrap;
+
+  width: 30ch;
+  max-width: 30ch;
+
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: normal;
+
+  line-height: 1.25;
+
   user-select: none;
   pointer-events: none;
+
   color: #fff;
   text-shadow: 0 0 3px rgba(0,0,0,0.3);
   z-index: 1;
+
   transition: opacity 0.2s linear;
 }
-
 .blank {
   display: inline-block;
   border-bottom: 2px solid #fff;
-  min-width: 30px;
+
+  min-width: 1.5em;
+  width: 1.5em;
+
   text-align: center;
   color: red;
-  transition: all 0.2s ease;
-}
 
+  transition: none;
+}
 .blank.expand {
   transform: scale(1.4);
 }
@@ -399,6 +414,94 @@ drawStarfield();
 
 // OPTION A: Inline raw text
 const wordListSource = `
+
+~Unit 0 – Food Items Set A
+
+We need |a| loaf of bread.
+There isn't one at home.
+
+There isn't |any| milk in the carton.
+The carton is completely empty.
+
+How |much| water is left in the bottle?
+I only need the amount, not the number of bottles.
+
+I bought |a| bag of chips.
+I only bought one bag.
+
+How |many| slices of pizza did the children eat?
+Count the slices for me.
+
+There aren't |any| packets of hot sauce.
+We have zero packets.
+
+She ate |a| bar of chocolate after lunch.
+She only ate one bar.
+
+There is |some| tuna in the can.
+But there isn't enough for two sandwiches.
+
+There isn't |much| peanut butter in the jar.
+Only a little remains.
+
+He drank |a| glass of lemonade with his meal.
+He only had one glass.
+
+There are |a lot of| boxes of cereal in the warehouse.
+More than five hundred boxes are stored there.
+
+She opened |a| carton of juice for breakfast.
+She only opened one carton.
+
+There isn't |any| ice cream in the tub.
+The tub is empty.
+
+How |many| cans of soda are in the fridge?
+Please count the cans.
+
+~Unit 0 – Food Items Set B
+
+There is |some| milk in the carton.
+But not enough for a bowl of cereal.
+
+There is |a lot of| bread in the bakery this morning.
+Hundreds of loaves were baked today.
+
+He made |a| cup of noodles for lunch.
+He only prepared one cup.
+
+Please pass me |the| pizza.
+It's the pizza we ordered earlier.
+
+She bought |a| jar of peanut butter yesterday.
+She only bought one jar.
+
+How |many| bottles of water do we need for the trip?
+Please count the bottles.
+
+There isn't |much| juice left in the carton.
+Only a small amount remains.
+
+There is |some| hot sauce in the packet.
+But there isn't enough for everyone.
+
+Please put |the| can of tuna into the bag.
+I mean the one on the top shelf.
+
+We bought |a| tub of ice cream for the party.
+We only bought one tub.
+
+There are |a lot of| cartons of milk in the delivery truck.
+More than three hundred cartons were delivered.
+
+I drank |the| lemonade this morning.
+It was the lemonade you made yesterday.
+
+How |many| cartons of milk were delivered today?
+Please count the cartons.
+
+
+
 ~Unit 1 – Family and Friends - Present Simple
 
 I usually |go| to school with my sister.
@@ -1829,6 +1932,29 @@ window.saveResult = async function saveResult(text) {
 
   console.log("✅ INSERT SUCCESS:", data);
 };
+
+</script>
+
+<script>
+
+function splitIntoTwoLines(text, maxLength = 30) {
+  const words = text.split(' ');
+  let line1 = '';
+  let line2 = '';
+
+  for (const word of words) {
+    const testLine = line1 ? line1 + ' ' + word : word;
+
+    if (testLine.length <= maxLength) {
+      line1 = testLine;
+    } else {
+      line2 = words.slice(words.indexOf(word)).join(' ');
+      break;
+    }
+  }
+
+  return line2 ? `${line1}\n${line2}` : line1;
+}
 
 </script>
 
