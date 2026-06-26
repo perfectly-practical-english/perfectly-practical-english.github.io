@@ -251,13 +251,16 @@ input[type=text] {
 
 .sentence {
   position: absolute;
-  display: inline-block;
+  display: flex;
+  flex-direction: column;
 
   font-size: 15px;
   font-weight: 600;
 
   width: 30ch;
   max-width: 30ch;
+
+
 
   white-space: normal;
   overflow-wrap: break-word;
@@ -738,9 +741,34 @@ window.addEventListener("sectionchange", (e) => {
     .map(s => s.trim())
     .filter(Boolean);
 
-  lines.forEach(line => {
-    if (!line.includes("|")) return;
-    sentences.push(line);
+for (let i = 0; i < lines.length; i++) {
+
+  const line1 = lines[i];
+
+  if (!line1.includes("|")) continue;
+
+  const line2 =
+    lines[i + 1] && !lines[i + 1].includes("|")
+      ? lines[i + 1]
+      : "";
+
+  // PACK BOTH INTO SINGLE STRING (IMPORTANT)
+  const combined =
+    line2
+      ? line1 + "\n" + line2
+      : line1;
+
+  sentences.push(combined);
+
+  const matches = line1.match(/\|(.+?)\|/g);
+  if (matches) {
+    matches.forEach(m =>
+      allCorrectAnswers.push(m.replace(/\|/g, ""))
+    );
+  }
+
+  if (line2) i++;
+}
 
     const matches = line.match(/\|(.+?)\|/g);
     if (matches) {
@@ -1106,23 +1134,73 @@ function spawnPlaneBurst(){
 // --- Spawn Sentences ---
 function spawnSentence(text){
   if(!text.includes('|')) return;
-  const span=document.createElement('span'); span.className='sentence'; span.innerHTML='';
-  const parts=text.split(/\|(.+?)\|/);
-  let blanks=[];
-  for(let i=0;i<parts.length;i++){
-    if(i%2===0) span.appendChild(document.createTextNode(parts[i]));
-    else{
-      const b=document.createElement('span'); b.className='blank';
-      b.dataset.answer=parts[i]; b.textContent=''; blanks.push({elem:b,answered:false});
-      span.appendChild(b);
+
+  const lines = text.split('\n');
+  const mainLine = lines[0];
+  const contextLine = (lines[1] && !lines[1].includes('|')) ? lines[1] : '';
+
+  const span = document.createElement('span');
+span.className = 'sentence';
+span.innerHTML = '';
+
+// CRITICAL FIX: force real vertical layout container
+span.style.display = 'inline-block';
+span.style.whiteSpace = 'normal';
+span.style.width = '30ch';
+
+  // make vertical stacking guaranteed
+  span.style.display = 'flex';
+  span.style.flexDirection = 'column';
+
+  const mainWrap = document.createElement('div');
+
+  const parts = mainLine.split(/\|(.+?)\|/);
+  let blanks = [];
+
+  for(let i = 0; i < parts.length; i++){
+    if(i % 2 === 0){
+      mainWrap.appendChild(document.createTextNode(parts[i]));
+    } else {
+      const b = document.createElement('span');
+      b.className = 'blank';
+      b.dataset.answer = parts[i];
+      b.textContent = '';
+      blanks.push({elem:b,answered:false});
+      mainWrap.appendChild(b);
     }
   }
+
+  span.appendChild(mainWrap);
+
+  // SECOND LINE (context) — always visible
+  if(contextLine){
+    const ctx = document.createElement('div');
+    ctx.textContent = contextLine;
+
+    ctx.style.fontSize = '12px';
+    ctx.style.color = '#aaa';
+    ctx.style.marginTop = '4px';
+    ctx.style.opacity = '0.9';
+
+    span.appendChild(ctx);
+  }
+
   gameArea.appendChild(span);
-  const minY = gameArea.clientHeight*0.1;
-  const maxY = gameArea.clientHeight*0.5 - span.offsetHeight;
-  span.style.top = (Math.random()*(maxY-minY)+minY)+'px';
-  span.style.left = gameArea.clientWidth+30+'px';
-  activeSentences.push({span,x:parseFloat(span.style.left),speed:-0.45-Math.random()*0.2,blanks,finished:false});
+
+  const minY = gameArea.clientHeight * 0.1;
+  const maxY = gameArea.clientHeight * 0.5 - span.offsetHeight;
+
+  span.style.top = (Math.random() * (maxY - minY) + minY) + 'px';
+  span.style.left = gameArea.clientWidth + 30 + 'px';
+
+  activeSentences.push({
+    span,
+    x: parseFloat(span.style.left),
+    speed: -0.45 - Math.random() * 0.2,
+    blanks,
+    finished: false
+  });
+
   totalWords++;
   generateMCButtons(blanks[0].elem.dataset.answer);
 }
@@ -1957,6 +2035,61 @@ function splitIntoTwoLines(text, maxLength = 30) {
 }
 
 </script>
+
+
+
+
+<script>
+(function () {
+
+  const original = window.spawnSentence;
+  if (!original) return;
+
+  window.spawnSentence = function (text) {
+
+    // run your original logic
+    original(text);
+
+    // get latest rendered sentence
+    const wrappers = document.querySelectorAll('.sentence');
+    const el = wrappers[wrappers.length - 1];
+    if (!el) return;
+
+    // split into lines
+    const lines = text.split("\n");
+
+    // must have second line
+    if (lines.length < 2) return;
+
+    const secondLine = lines[1].trim();
+
+    // safety: only display if it's NOT an answer line
+    if (!secondLine || secondLine.includes("|")) return;
+
+    // prevent duplicates
+    if (el.dataset.contextAdded === "1") return;
+    el.dataset.contextAdded = "1";
+
+    // create context line UNDER first line
+    const ctx = document.createElement("div");
+    ctx.textContent = secondLine;
+
+    Object.assign(ctx.style, {
+      fontSize: "12px",
+      color: "#aaa",
+      marginTop: "4px",
+      opacity: "0.9",
+      display: "block"
+    });
+
+    el.appendChild(ctx);
+  };
+
+})();
+</script>
+
+
+
 
 </body>
 </html>
