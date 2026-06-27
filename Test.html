@@ -229,10 +229,10 @@ const rightInput = document.getElementById("rightInput");
         if (!r.ok) throw new Error("HTTP " + r.status);
         return r.text();
       })
-      .then(text => {
-        rightInput.value = text;
-        update();
-      })
+.then(text => {
+  rightInput.value = text;
+  setTimeout(update, 0);
+})
       .catch(err => {
         console.error("data.txt load failed:", err);
       });
@@ -300,7 +300,8 @@ let leftRows=[];
 function update(){
   leftRows = [];
 
-  const source = getTileSourceText?.() || rightInput.value || "";
+  const source = getTileSourceText?.() || rightInput.value;
+if(!source) return;
   buildTiles(source);
 
   render();
@@ -924,7 +925,7 @@ function parseSectionedText(text){
 }
 (function(){
 
-  buildTiles = function(){
+  window.buildTiles = function(){
 
     const sourceText = getTileSourceText();
     if(!sourceText){
@@ -937,7 +938,7 @@ function parseSectionedText(text){
     activeSectionTitle = null;
 
     const activeSection = sections.find(section =>
-      section.heading.toLowerCase().includes("active section")
+      /^active section\b/i.test(section.heading)
     );
 
     const words = [];
