@@ -267,31 +267,48 @@ function parseLeft(text){
   return text.replace(/\r/g,"").split("\n").map(t=>t.trim());
 }
 
-window.__LEGACY_buildTiles = function(text){
-  if(!text) return;
+function buildTilesFromSections(sections){
 
-  const words = text
-    .replace(/\r/g, "")
-    .split("\n")
-    .map(line => line.trim())
-    .filter(Boolean);
+  const active = sections.find(s =>
+    s.heading.toLowerCase().includes("active section")
+  );
 
-  const totalRowsNeeded = Math.ceil(words.length / COLS);
-  const neededRows = Math.ceil(words.length / COLS);
-  const START_ROW = Math.max(0, ROWS - neededRows);
+  const words = [];
 
-  tiles = words.map((word, index) => ({
+  if(active){
+    active.body.forEach(line => {
+      const t = line.trim();
+      if(!t) return;
+      if(t.startsWith("~")) return;
+      if(t.startsWith("|") && t.endsWith("|")) return;
+      words.push(t);
+    });
+  }
+
+  return words.map((word, index) => ({
     id: index,
     text: word,
-    row: START_ROW + Math.floor(index / COLS),
+    row: Math.floor(index / COLS),
     col: index % COLS
   }));
-};/* ================= UPDATE ================= */
+}
 
+/* ================= UPDATE ================= */
 
-}// leftInput.addEventListener("input", update);
-// rightInput.addEventListener("input", update);
+function update(){
 
+  const text = rightInput.value || "";
+
+  const sections = parseSectionedText(text);
+  tiles = buildTilesFromSections(sections);
+
+  if(typeof applyPOS === "function") applyPOS();
+  if(typeof render === "function") render();
+}
+
+/* LIVE INPUT HOOKS */
+leftInput.addEventListener("input", update);
+rightInput.addEventListener("input", update);
 /* ================= SELECTION ================= */
 
 function clearSelection(){
@@ -461,7 +478,7 @@ function render(){
     L.className="cell";
     L.dataset.side="L";
     L.dataset.r=r;
-    L.textContent=leftRows[r]||"";
+    L.textContent=cellText[r]?.[0] || "";
 
     L.onpointerdown=(e)=>{
       if(editing) return;
@@ -486,7 +503,7 @@ function render(){
       R.dataset.side="R";
       R.dataset.r=r;
       R.dataset.c=c;
-      const tile = tiles.find(
+const tile = (tiles || []).find(
   t => t.row===r && t.col===c
 );
 
@@ -708,6 +725,7 @@ document.addEventListener("paste",(e)=>{
 });
 
 update();
+render();
 
 </script>
 
@@ -874,28 +892,34 @@ function parseSectionedText(text){
   text = text.replace(/\r/g,"");
 
   const sections = [];
-
   let current = null;
 
   text.split("\n").forEach(line => {
 
     const trimmed = line.trim();
 
+    // INSTRUCTION LAYER
+    if(trimmed.startsWith("!")){
+      sections.push({
+        heading: "__INSTRUCTION__",
+        body: [trimmed.slice(1).trim()]
+      });
+      return;
+    }
+
     // SECTION HEADER
     if(trimmed.startsWith("~")){
-
       current = {
         heading: trimmed.slice(1).trim(),
-        body:[]
+        body: []
       };
-
       sections.push(current);
       return;
     }
 
     if(!current) return;
 
-    // ❌ DROP SUBHEADERS LIKE |Nouns|
+    // DROP SUBHEADERS
     if(trimmed.startsWith("|") && trimmed.endsWith("|")){
       return;
     }
@@ -905,61 +929,32 @@ function parseSectionedText(text){
 
   return sections;
 }
+
 (function(){
 
 window.buildTiles = function(sourceText){
 
   const text =
     sourceText ??
-    (typeof getTileSourceText === "function"
-      ? getTileSourceText()
-      : rightInput.value || "");
+    getTileSourceText?.() ??
+    rightInput.value ??
+    "";
 
   const sections = parseSectionedText(text);
 
-  let activeSectionTitle = null;
+  const newTiles = buildTilesFromSections(sections);
 
-  const activeSection = sections.find(section =>
-    section.heading.toLowerCase().includes("active section")
-  );
+  tiles = newTiles;
 
-  const words = [];
+  window.activeSectionTitle =
+    sections.find(s =>
+      s.heading.toLowerCase().includes("active section")
+    )?.heading || null;
 
-  if(activeSection){
-
-    activeSectionTitle = activeSection.heading
-      .replace(/^Active Section\b\s*/i, "")
-      .trim();
-
-    activeSection.body.forEach(line => {
-      const t = line.trim();
-      if(!t) return;
-
-      // skip structure markers
-      if(t.startsWith("~")) return;
-      if(t.startsWith("|") && t.endsWith("|")) return;
-
-      words.push(t);
-    });
-  }
-
-  const TOP_MARGIN = 0;
-
-  tiles = words.map((word, index) => ({
-    id: index,
-    text: word,
-    row: TOP_MARGIN + Math.floor(index / COLS),
-    col: index % COLS
-  }));
-
-  window.activeSectionTitle = activeSectionTitle;
+  update();
 };
 
-window.buildTiles = window.buildTiles;
-update();
-
 })();
-
 
 </script>
 
