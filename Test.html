@@ -267,33 +267,26 @@ function parseLeft(text){
   return text.replace(/\r/g,"").split("\n").map(t=>t.trim());
 }
 
-function buildTiles(text){
+window.__LEGACY_buildTiles = function(text){
   if(!text) return;
 
-const words = text
-  .replace(/\r/g, "")
-  .split("\n")
-  .map(line => line.trim())
-  .filter(Boolean);
+  const words = text
+    .replace(/\r/g, "")
+    .split("\n")
+    .map(line => line.trim())
+    .filter(Boolean);
 
-const totalRowsNeeded = Math.ceil(words.length / COLS);
+  const totalRowsNeeded = Math.ceil(words.length / COLS);
+  const neededRows = Math.ceil(words.length / COLS);
+  const START_ROW = Math.max(0, ROWS - neededRows);
 
-// compute overflow if any
-const overflow = totalRowsNeeded - ROWS;
-
-// shift UP only when needed so last row always fits
-const neededRows = Math.ceil(words.length / COLS);
-
-// ALWAYS bottom-align (stable behavior)
-const START_ROW = Math.max(0, ROWS - neededRows);
-
-tiles = words.map((word, index) => ({
-  id: index,
-  text: word,
-  row: START_ROW + Math.floor(index / COLS),
-  col: index % COLS
-}));
-/* ================= UPDATE ================= */
+  tiles = words.map((word, index) => ({
+    id: index,
+    text: word,
+    row: START_ROW + Math.floor(index / COLS),
+    col: index % COLS
+  }));
+};/* ================= UPDATE ================= */
 
 
 }// leftInput.addEventListener("input", update);
@@ -927,7 +920,7 @@ window.buildTiles = function(sourceText){
   let activeSectionTitle = null;
 
   const activeSection = sections.find(section =>
-    section.heading.trim().toLowerCase() === "active section"
+    section.heading.toLowerCase().includes("active section")
   );
 
   const words = [];
@@ -942,6 +935,7 @@ window.buildTiles = function(sourceText){
       const t = line.trim();
       if(!t) return;
 
+      // skip structure markers
       if(t.startsWith("~")) return;
       if(t.startsWith("|") && t.endsWith("|")) return;
 
@@ -960,10 +954,11 @@ window.buildTiles = function(sourceText){
 
   window.activeSectionTitle = activeSectionTitle;
 };
-  update();
+
+window.buildTiles = window.buildTiles;
+update();
 
 })();
-
 
 
 </script>
