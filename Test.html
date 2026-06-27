@@ -292,7 +292,6 @@ function buildTilesFromSections(sections){
     col: index % COLS
   }));
 }
-
 /* ================= UPDATE ================= */
 
 function update(){
@@ -898,24 +897,18 @@ function parseSectionedText(text){
 
     const trimmed = line.trim();
 
-    // INSTRUCTION LAYER
-    if(trimmed.startsWith("!")){
-      sections.push({
-        heading: "__INSTRUCTION__",
-        body: [trimmed.slice(1).trim()]
-      });
-      return;
+// INSTRUCTION LAYER
+if(trimmed.startsWith("!")){
+    if(current){
+        current.body.push(line);
+    }else{
+        sections.push({
+            heading: "__INSTRUCTION__",
+            body:[trimmed.slice(1).trim()]
+        });
     }
-
-    // SECTION HEADER
-    if(trimmed.startsWith("~")){
-      current = {
-        heading: trimmed.slice(1).trim(),
-        body: []
-      };
-      sections.push(current);
-      return;
-    }
+    return;
+}
 
     if(!current) return;
 
@@ -951,8 +944,8 @@ window.buildTiles = function(sourceText){
       s.heading.toLowerCase().includes("active section")
     )?.heading || null;
 
-  update();
-};
+applyPOS();
+render();};
 
 })();
 
