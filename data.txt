@@ -9,11 +9,7 @@ Food
 
 ~Top Right Field
 
-UGLY This file defines structured word data for the tile system.
-Only the "Active Section" is rendered into tiles.
-
-Category headers (|...|) are used for coloring only.
-Each line under a category becomes one tile item.
+Name your product and say what it is. Describe how it looks, tastes, and what it’s made from, including flavors and whether it is healthy. Explain why people would enjoy it and how it makes them feel. End with where to buy it, the price, and a short slogan.
 
 ~Right Table
 
