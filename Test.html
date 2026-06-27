@@ -230,11 +230,28 @@ const rightInput = document.getElementById("rightInput");
         return r.text();
       })
 .then(text => {
-  rightInput.value = text;
-  requestAnimationFrame(() => {
-    update();
-  });
-})      .catch(err => {
+
+    const sections = parseSectionedText(text);
+
+    const instructions =
+        sections.find(s =>
+            s.heading.toLowerCase() === "instructions"
+        );
+
+    rightInput.value =
+        instructions
+            ? instructions.body.join("\n")
+            : "";
+
+    window.__tileSource = text;
+
+    requestAnimationFrame(() => {
+        update();
+    });
+
+})
+
+      .catch(err => {
         console.error("data.txt load failed:", err);
       });
   }
@@ -296,9 +313,9 @@ function buildTilesFromSections(sections){
 
 function update(){
 
-  const text = rightInput.value || "";
+const text = window.__tileSource || "";
 
-  const sections = parseSectionedText(text);
+const sections = parseSectionedText(text);
   tiles = buildTilesFromSections(sections);
 
   if(typeof applyPOS === "function") applyPOS();
@@ -881,11 +898,60 @@ function apply(state) {
 
   let activeSectionTitle = null;
 
-window.getTileSourceText = function getTileSourceText(){
+  // Holds the COMPLETE contents of data.txt.
+  // The textarea will only display the Instructions section.
+  window.__tileSource = window.__tileSource || "";
 
-    const external = (rightInput.value || "").trim();
-    return external; // FORCE external file ONLY
-}
+  window.getTileSourceText = function getTileSourceText(){
+
+    return window.__tileSource;
+
+  };
+
+  function parseSectionedText(text){
+
+    text = text.replace(/\r/g,"");
+
+    const sections = [];
+    let current = null;
+
+    text.split("\n").forEach(line => {
+
+      const trimmed = line.trim();
+
+      // SECTION HEADER
+      if(trimmed.startsWith("~")){
+        current = {
+          heading: trimmed.slice(1).trim(),
+          body: []
+        };
+        sections.push(current);
+        return;
+      }
+
+      if(!current) return;
+
+      current.body.push(line);
+
+    });
+
+    return sections;
+  }
+
+  window.getInstructionText = function(){
+
+    const sections = parseSectionedText(window.__tileSource);
+
+    const instructions = sections.find(
+      s => s.heading.toLowerCase() === "instructions"
+    );
+
+    return instructions
+      ? instructions.body.join("\n")
+      : "";
+
+  };
+
 function parseSectionedText(text){
 
   text = text.replace(/\r/g,"");
