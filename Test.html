@@ -295,18 +295,8 @@ tiles = words.map((word, index) => ({
 }));
 /* ================= UPDATE ================= */
 
-let leftRows=[];
 
-function update(){
-  leftRows = [];
-
-const source = getTileSourceText?.() || rightInput.value || "";
-buildTiles(source);
-
-  render();
-  applyPOS?.();
-}
-// leftInput.addEventListener("input", update);
+}// leftInput.addEventListener("input", update);
 // rightInput.addEventListener("input", update);
 
 /* ================= SELECTION ================= */
@@ -924,49 +914,52 @@ function parseSectionedText(text){
 }
 (function(){
 
-  window.buildTiles = function(){
+window.buildTiles = function(sourceText){
 
-    const sourceText = getTileSourceText?.() ?? rightInput.value ?? "";
+  const text =
+    sourceText ??
+    (typeof getTileSourceText === "function"
+      ? getTileSourceText()
+      : rightInput.value || "");
 
-    const sections = parseSectionedText(sourceText);
+  const sections = parseSectionedText(text);
 
-    let activeSectionTitle = null;
+  let activeSectionTitle = null;
 
-    const activeSection = sections.find(section =>
-      section.heading.trim().toLowerCase() === "active section"
-    );
+  const activeSection = sections.find(section =>
+    section.heading.trim().toLowerCase() === "active section"
+  );
 
-    const words = [];
+  const words = [];
 
-    if(activeSection){
+  if(activeSection){
 
-      activeSectionTitle = activeSection.heading
-        .replace(/^Active Section\b\s*/i, "")
-        .trim();
+    activeSectionTitle = activeSection.heading
+      .replace(/^Active Section\b\s*/i, "")
+      .trim();
 
-      activeSection.body.forEach(line => {
-        const t = line.trim();
-        if(!t) return;
+    activeSection.body.forEach(line => {
+      const t = line.trim();
+      if(!t) return;
 
-        if(t.startsWith("~")) return;
-        if(t.startsWith("|") && t.endsWith("|")) return;
+      if(t.startsWith("~")) return;
+      if(t.startsWith("|") && t.endsWith("|")) return;
 
-        words.push(t);
-      });
-    }
+      words.push(t);
+    });
+  }
 
-    const TOP_MARGIN = 0;
+  const TOP_MARGIN = 0;
 
-    tiles = words.map((word, index) => ({
-      id: index,
-      text: word,
-      row: TOP_MARGIN + Math.floor(index / COLS),
-      col: index % COLS
-    }));
+  tiles = words.map((word, index) => ({
+    id: index,
+    text: word,
+    row: TOP_MARGIN + Math.floor(index / COLS),
+    col: index % COLS
+  }));
 
-    window.activeSectionTitle = activeSectionTitle;
-  };
-
+  window.activeSectionTitle = activeSectionTitle;
+};
   update();
 
 })();
