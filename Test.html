@@ -238,26 +238,9 @@ async function loadData() {
 function populateLeft(lines) {
 
     const sheet = document.getElementById("left");
-    sheet.innerHTML = "";
-
-    lines
-        .map(line => line.trim())
-        .filter(line => line.length > 0)
-        .forEach(text => {
-
-            const cell = document.createElement("div");
-            cell.className = "cell";
-
-            const tile = document.createElement("div");
-            tile.className = "tile";
-            tile.textContent = text;
-
-            cell.appendChild(tile);
-            sheet.appendChild(cell);
-
-        });
-
-}
+// DO NOT rebuild DOM structure.
+// The DOM already exists from populateRight().
+return;
 </script>
 
 <script>
@@ -351,11 +334,10 @@ function buildLeft(){
 
 function buildRight(){
 
-    const sheet = document.getElementById("right");
+const sheet = document.getElementById("right");
 
-    const tiles = [...sheet.querySelectorAll(".tile")];
-
-    sheet.innerHTML = "";
+// only grab tiles that are already in a stable DOM state
+const tiles = [...sheet.querySelectorAll(".tile")];
 
     let index = 0;
 
