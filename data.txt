@@ -1,0 +1,168 @@
+~Instructions
+UGLY This file defines structured word data for the tile system.
+Only the "Active Section" is rendered into tiles.
+Category headers (|...|) are used for coloring only.
+Each line under a category becomes one tile item.
+
+~Active Section Food Product
+
+|Adjectives|
+Monkey Mania 
+crunchy
+crispy
+chewy
+cream
+greasy
+sticky
+fluffy
+dense
+light
+fizzy
+rich
+zesty
+buttery
+roasted
+toasted
+chocolatey
+addictive
+tangy
+salty
+sweet
+sour
+spicy
+savory
+cheesy
+smoky
+sugary
+carbonated
+yummy
+tasty
+delicious
+juicy
+refreshing
+bold
+flavorful
+irresistible
+satisfying
+mouthwatering
+golden
+gooey
+melted
+frozen
+chilled
+baked to perfection
+coated
+seasoned
+loaded with
+topped with
+filled with
+stuffed with
+drizzled with
+
+|Nouns|
+can
+bottle
+plastic wrapper
+chip bag
+candy bar
+box
+carton
+cup
+bucket
+packet
+package
+six-pack
+chips
+fries
+burger
+sandwich
+pizza
+nuggets
+cookie
+cracker
+pretzel
+popcorn
+soda
+soft drink
+energy drink
+milkshake
+syrup
+seasoning
+topping
+filling
+chocolate
+vanilla
+caramel
+barbecue
+chili
+onion
+sour-cream
+sugar
+salt
+vegetable oil
+flour
+
+|Verbs|
+eat
+bite
+chew
+munch
+crunch
+snack
+sip
+gulp
+slurp
+lick
+taste
+savor
+devour
+swallow
+gobble
+guzzle
+nibble
+indulge
+treat
+enjoy
+crave
+finish
+cook
+bake
+fry
+deep-fry
+roast
+toast
+grill
+heat
+microwave
+mix
+blend
+stir
+combine
+season
+flavor
+coat
+sprinkle
+wrap
+seal
+sweeten
+melt
+crisp
+puff
+pop
+glaze
+load
+top
+fill
+stuff
+drizzle
+
+~Image References
+burger: burger_closeup.jpg
+pizza: pizza_melting_cheese.png
+chips: crispy_chips_bag.png
+drink: soda_can_fizz.png
+
+~Notes
+Use adjectives + nouns + verbs to construct product descriptions.
+Avoid duplicating words already used in tiles unless variation is needed.
+Keep phrases short for better grid fit.
