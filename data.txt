@@ -1,10 +1,15 @@
-~Instructions
+~ Top Left field
+
+~Left Column
+
+~Top Right Field
+
 UGLY This file defines structured word data for the tile system.
 Only the "Active Section" is rendered into tiles.
 Category headers (|...|) are used for coloring only.
 Each line under a category becomes one tile item.
 
-~Active Section Food Product
+~Right Table
 
 |Adjectives|
 Monkey Mania 
@@ -161,8 +166,3 @@ burger: burger_closeup.jpg
 pizza: pizza_melting_cheese.png
 chips: crispy_chips_bag.png
 drink: soda_can_fizz.png
-
-~Notes
-Use adjectives + nouns + verbs to construct product descriptions.
-Avoid duplicating words already used in tiles unless variation is needed.
-Keep phrases short for better grid fit.
