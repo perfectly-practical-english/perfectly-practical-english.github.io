@@ -225,43 +225,26 @@ const rightInput = document.getElementById("rightInput");
 
   function start(){
     fetch("./data.txt", { cache: "no-store" })
-      .then(r => r.text())
+      .then(r => {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.text();
+      })
       .then(text => {
-
         rightInput.value = text;
-
         update();
-        render();
-        applyPOS();
-
       })
       .catch(err => {
-        console.error("data.txt failed:", err);
+        console.error("data.txt load failed:", err);
       });
   }
 
   (function loop(){
-    if(ready()) return start();
-    requestAnimationFrame(loop);
+    if(ready()) start();
+    else requestAnimationFrame(loop);
   })();
 
 })();
 
-  try {
-    const res = await fetch("./data.txt", { cache: "no-store" });
-    const text = await res.text();
-
-rightInput.value = text;
-
-update();
-render();
-applyPOS();
-
-  } catch (err) {
-    console.error("data.txt failed to load:", err);
-  }
-
-})();
 
 let dragging = false;
 let editing = false;
@@ -284,6 +267,7 @@ function parseLeft(text){
 }
 
 function buildTiles(text){
+  if(!text) return;
 
 const words = text
   .replace(/\r/g, "")
@@ -314,14 +298,14 @@ tiles = words.map((word, index) => ({
 let leftRows=[];
 
 function update(){
-  // leftRows = parseLeft(leftInput.value);
-leftRows = [];
+  leftRows = [];
 
-  buildTiles(rightInput.value);
+  const source = getTileSourceText?.() || rightInput.value || "";
+  buildTiles(source);
 
   render();
+  applyPOS?.();
 }
-
 // leftInput.addEventListener("input", update);
 // rightInput.addEventListener("input", update);
 
@@ -938,57 +922,64 @@ function parseSectionedText(text){
 
   return sections;
 }
+(function(){
+
   buildTiles = function(){
 
-  const sourceText = getTileSourceText();
-  const sections = parseSectionedText(sourceText);
+    const sourceText = getTileSourceText();
+    if(!sourceText){
+      tiles = [];
+      return;
+    }
 
-  activeSectionTitle = null;
+    const sections = parseSectionedText(sourceText);
 
-const activeSection = sections.find(
-  section => section.heading.toLowerCase().includes("active section")
-);
-  const words = [];
+    activeSectionTitle = null;
 
-  if(activeSection){
+    const activeSection = sections.find(section =>
+      section.heading.toLowerCase().includes("active section")
+    );
 
-    activeSectionTitle = activeSection.heading
-      .replace(/^Active Section\b\s*/i,"")
-      .trim();
+    const words = [];
 
-    activeSection.body
-      .map(line => line.trim())
-      .filter(Boolean)
-      .filter(line =>
-        !(line.startsWith("|") && line.endsWith("|")) &&
-        !(line.startsWith("~"))
-      )
-      .forEach(line => words.push(line));
-  }
+    if(activeSection){
 
-  const neededRows = Math.ceil(words.length / COLS);
+      activeSectionTitle = activeSection.heading
+        .replace(/^Active Section\b\s*/i, "")
+        .trim();
 
-const TOP_MARGIN = 0;
+      activeSection.body
+        .map(line => line.trim())
+        .filter(Boolean)
+        .filter(line =>
+          !(line.startsWith("|") && line.endsWith("|")) &&
+          !(line.startsWith("~"))
+        )
+        .forEach(line => words.push(line));
+    }
 
-tiles = words.map((word, index) => {
-  const row = Math.floor(index / COLS);
-  const col = index % COLS;
+    // safety: avoid silent empty render
+    if(words.length === 0){
+      tiles = [];
+      window.activeSectionTitle = activeSectionTitle;
+      return;
+    }
 
-  return {
-    id: index,
-    text: word,
-    row: TOP_MARGIN + row,
-    col
+    const TOP_MARGIN = 0;
+
+    tiles = words.map((word, index) => ({
+      id: index,
+      text: word,
+      row: TOP_MARGIN + Math.floor(index / COLS),
+      col: index % COLS
+    }));
+
+    window.activeSectionTitle = activeSectionTitle;
   };
-});
-
-  window.activeSectionTitle = activeSectionTitle;
-};
 
   update();
 
-})();
-</script>
+})();</script>
 
 
 <script>
@@ -1227,6 +1218,11 @@ tiles = words.map((word, index) => {
 
       const t = line.trim();
       if(!t) return;
+
+if(t.startsWith("~")){
+    current = null;
+    return;
+}
 
       if(t.startsWith("|") && t.endsWith("|")){
         current = t.replaceAll("|","").trim();
