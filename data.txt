@@ -13,15 +13,6 @@ Name your product and say what it is. Describe how it looks, tastes, and what it
 
 ~Right Table
 
-
-
-
-
-
-
-
-~Active Section Food Product
-
 |Adjectives|
 crunchy
 crispy
@@ -185,5 +176,6 @@ stuff
 drizzle
 
 ~Image References
-1overlay-small.png
-1overlay-large.png
+1overlay-small.png|80
+1overlay-large.png|140
+Circleoverlay.png|120
