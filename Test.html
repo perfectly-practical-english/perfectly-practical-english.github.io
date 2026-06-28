@@ -128,19 +128,16 @@ textarea{
 .cell{
   display:flex;
   align-items:center;
-  padding:0 1px;
+  padding:0 1px;            /* nearly full-width tile */
   white-space:nowrap;
   overflow:hidden;
   user-select:none;
   cursor:pointer;
-
-  background:rgba(255,255,255,0.12);
-  border-right:1px solid rgba(0,0,0,0.35);
+  border-right:1px solid rgba(0,0,0,.35);
 }
 
 .cell.selected{
-  background:rgba(255,255,255,0.15);
-
+  background:rgba(90,160,255,.28);
   outline:1px solid rgba(40,100,220,.8);
 }
 
@@ -148,9 +145,7 @@ textarea{
   display:flex;
   align-items:center;
 
-   width:calc(100% - 2px);
-  margin:0;
-
+  width:100%;               /* fill cell width */
   height:calc(100% - 4px);
 
   padding:3px 8px;
