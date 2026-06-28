@@ -216,38 +216,15 @@ async function loadData() {
 
     txt.split(/\r?\n/).forEach(line => {
 
-if (line.startsWith("~")) {
+        if (line.startsWith("~")) {
+            current = line.substring(1).trim();
+            sections[current] = [];
+            return;
+        }
 
-    const name = line.slice(1).trim();
-
-    // ONLY accept known sections
-    const allowed = new Set([
-        "Left Column",
-        "Right Table",
-        "Top Left field",
-        "Top Right Field",
-        "Image References"
-    ]);
-
-    if (!allowed.has(name)) {
-        current = null; // 🚫 block unknown or malformed headers
-        return;
-    }
-
-
-
-// switch section
-current = name;
-sections[current] = [];
-
-return;
-}
-
-if (!current) return;
-
-if (current) {
-    sections[current].push(line);
-}
+        if (current) {
+            sections[current].push(line);
+        }
 
     });
 
@@ -257,13 +234,7 @@ if (current) {
     document.getElementById("rightInput").value =
         (sections["Top Right Field"] || []).join("\n").trim();
 
-    const leftRaw = sections["Left Column"] || [];
-
-const leftClean = leftRaw.filter(line => {
-    return line && !line.startsWith("~");
-});
-
-populateLeft(leftClean);
+    populateLeft(sections["Left Column"] || []);
     populateRight(sections["Right Table"] || []);
 }
 </script>
