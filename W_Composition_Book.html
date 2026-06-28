@@ -758,21 +758,23 @@ border-radius:6px;
     width:180px;
 
     font-size:12px;
-    padding:8px 10px;   /* ↑ makes them taller and readable */
+
+    padding:10px 6px;   /* taller, but tighter sides */
+
+    line-height:1.1;    /* keeps text compact */
 
     cursor:pointer;
     text-align:left;
     white-space:nowrap;
 
-    background:#ffffff;            /* white buttons */
-    color:#000000;                /* black text */
+    background:#ffffff;
+    color:#000;
 
-    border:2px solid var(--outer); /* purple border */
+    border:2px solid var(--outer);
     border-radius:4px;
 
     overflow:hidden;
 }
-
 #pngToolbar button.selected{
     background:#e6dcff;   /* soft purple tint */
     border-color:#7a4bd6; /* stronger purple edge */
@@ -862,12 +864,17 @@ function setPlaceMode(mode){
    BUTTONS
 ========================================================== */
 
-const placeholder = document.createElement("div");
+const placeholder = document.createElement("button");
 placeholder.textContent = "Select";
-placeholder.style.padding = "6px 10px";
-placeholder.style.color = "#ccc";
-placeholder.style.fontSize = "12px";
+
 bar.appendChild(placeholder);
+
+placeholder.onclick = function () {
+    setPlaceMode(null);
+
+    [...bar.querySelectorAll("button")]
+        .forEach(b => b.classList.remove("selected"));
+};
 
 
 
