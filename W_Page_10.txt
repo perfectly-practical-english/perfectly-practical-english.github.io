@@ -176,8 +176,8 @@ stuff
 drizzle
 
 ~Image References
-1overlay-small.png|125
-1overlay-large.png|200
+David-small.png|125
+David-large.png|200
 1_Packet_of_Chips.png|125
 3_Cup_of_Noodles.png|125
 4_Packet_of_Instant_Noodles.png|125
