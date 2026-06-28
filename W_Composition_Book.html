@@ -828,6 +828,7 @@ bar.id = "pngToolbar";
 document.body.appendChild(bar);
 
 let placeMode = null;
+let selectedPng = null;
 
 /* ==========================================================
    ENABLE / DISABLE PLACEMENT MODE
@@ -862,6 +863,23 @@ PNGS.forEach(item => {
 /* CLEAR */
 const clear = document.createElement("button");
 clear.textContent = "Clear";
+bar.appendChild(clear);
+
+clear.onclick = function(){
+
+    const selectedTile = document.querySelector(".tile.selectedTile");
+
+    if(selectedTile){
+        selectedTile.remove();
+        return;
+    }
+
+    if(selectedPng){
+        selectedPng.remove();
+        selectedPng = null;
+    }
+
+};
 
 document.addEventListener("keydown", function(e){
 
@@ -894,7 +912,6 @@ document.addEventListener("keydown", function(e){
 
 });
 
-bar.appendChild(clear);
 
 /* ==========================================================
    PLACEMENT (NOW ON OVERLAY ONLY)
@@ -934,6 +951,15 @@ overlay.addEventListener("pointerdown", function(e){
 function enableDrag(el){
 
     el.addEventListener("pointerdown", function(ev){
+
+        // Select this PNG
+        document.querySelectorAll(".overlayPng").forEach(img=>{
+            img.style.outline = "";
+        });
+
+        selectedPng = el;
+        el.style.outline = "3px solid #2d7cff";
+
         ev.stopPropagation();
         ev.preventDefault();
 
@@ -961,10 +987,74 @@ function enableDrag(el){
         window.addEventListener("pointermove", move);
         window.addEventListener("pointerup", up);
     });
-}
 
+}
 })();
 
+</script>
+
+<script>
+/* ==========================================================
+   DRAGGABLE PNG TOOLBAR
+========================================================== */
+
+(function(){
+
+function makeToolbarDraggable(){
+
+    const bar = document.getElementById("pngToolbar");
+
+    if(!bar){
+        requestAnimationFrame(makeToolbarDraggable);
+        return;
+    }
+
+    let dragging = false;
+    let offsetX = 0;
+    let offsetY = 0;
+
+    bar.addEventListener("pointerdown", function(e){
+
+        /* Don't drag when clicking a button */
+        if(e.target.tagName === "BUTTON") return;
+
+        dragging = true;
+
+        const rect = bar.getBoundingClientRect();
+
+        offsetX = e.clientX - rect.left;
+        offsetY = e.clientY - rect.top;
+
+        /* Stop using bottom/transform once moved */
+        bar.style.left = rect.left + "px";
+        bar.style.top = rect.top + "px";
+        bar.style.bottom = "auto";
+        bar.style.transform = "none";
+
+        e.preventDefault();
+
+    });
+
+    window.addEventListener("pointermove", function(e){
+
+        if(!dragging) return;
+
+        bar.style.left = (e.clientX - offsetX) + "px";
+        bar.style.top  = (e.clientY - offsetY) + "px";
+
+    });
+
+    window.addEventListener("pointerup", function(){
+
+        dragging = false;
+
+    });
+
+}
+
+makeToolbarDraggable();
+
+})();
 </script>
 
 
