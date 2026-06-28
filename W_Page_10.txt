@@ -1,0 +1,205 @@
+~Top Left field
+
+Page 10
+
+~Left Column
+
+Unit 2
+Food
+
+~Top Right Field
+
+Name your product and say what it is. Describe how it looks, tastes, and what it’s made from, including flavors and whether it is healthy. Explain why people would enjoy it and how it makes them feel. End with where to buy it, the price, and a short slogan.
+
+~Right Table
+
+|Adjectives|
+crunchy
+crispy
+chewy
+creamy
+greasy
+sticky
+fluffy
+dense
+light
+fizzy
+rich
+zesty
+buttery
+roasted
+toasted
+chocolatey
+addictive
+tangy
+salty
+sweet
+sour
+spicy
+savory
+cheesy
+smoky
+sugary
+carbonated
+yummy
+tasty
+delicious
+juicy
+refreshing
+bold
+flavorful
+irresistible
+satisfying
+mouthwatering
+golden
+gooey
+melted
+frozen
+chilled
+baked to perfection
+roasted
+toasted
+coated
+seasoned
+loaded with
+topped with
+filled with
+stuffed with
+drizzled with
+mushy
+squishy
+
+|Nouns|
+can
+bottle
+plastic wrapper
+chip bag
+candy bar
+box
+carton
+cup
+bucket
+packet
+package
+six-pack
+chips
+fries
+burger
+sandwich
+pizza
+nuggets
+cookie
+cracker
+pretzel
+popcorn
+soda
+soft drink
+energy drink
+milkshake
+syrup
+seasoning
+topping
+filling
+chocolate
+vanilla
+caramel
+barbecue
+chili
+onion
+sour-cream
+sugar
+salt
+artificial flavoring
+vegetable oil
+flour
+
+|Verbs|
+eat
+bite
+chew
+munch
+crunch
+snack
+sip
+gulp
+slurp
+lick
+taste
+savor
+devour
+swallow
+gobble
+guzzle
+nibble
+indulge
+treat
+enjoy
+crave
+finish
+melts in your mouth
+cook
+bake
+fry
+deep-fry
+roast
+toast
+grill
+heat
+microwave
+mix
+blend
+stir
+combine
+season
+flavor
+coat
+sprinkle
+wrap
+seal
+flavor
+sweeten
+melt
+crisp
+crunch
+puff
+pop
+glaze
+bake
+roast
+toast
+coat
+season
+load
+top
+fill
+stuff
+drizzle
+
+~Image References
+1overlay-small.png|125
+1overlay-large.png|200
+1_Packet_of_Chips.png
+3_Cup_of_Noodles.png
+4_Packet_of_Instant_Noodles.png
+5_Can_of_Soda.png
+6_Can_of_Soda.png
+7_Candy_Wrapper.png
+8_Package_of_Cookies.png
+9 Final 7-11 Whacky Packs ChatGPT Image Jun 25, 2026, 01_43_58 AM (2).png
+9_Carton_of_Juice.png
+10_Bottle_of_Yogurt_Drink.png
+11_Carton_of_Milk.png
+12_Carton_of_Juice.png
+13_Tub_of_Ice_Caream.png
+14_Package_of_Seaweed_Snacks.png
+15_Hamburger_Container.png
+16_A_Bucket_of_Fried_Chicken.png
+17_Pizza_Box.png
+18_Box_of_Popcorn.png
+19_Can_of_Peanuts.png
+2_Box_of_Cereal.png
+20_Can_of_Assorted_Nuts.png
+21_Box_of_Rice.png
+22_Cake_Box.png
+23_Frozen_Dinner_Tray.png
+24_Can_of_Soup.png
