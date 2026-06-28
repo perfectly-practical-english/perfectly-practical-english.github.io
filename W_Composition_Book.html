@@ -184,154 +184,6 @@ textarea{
 <body>
 
 
-<div id="rawTextSource" class="visually-hidden">
-
-~Active Section Describing Favorite Foods
-
-|Pronouns|
-I
-you
-he
-she
-it
-we
-they
-
-|Verbs|
-like
-love
-want
-need
-have
-bring
-make
-buy
-take
-pack
-prepare
-carry
-cook
-bake
-eat
-drink
-share
-put
-
-chop
-slice
-dice
-mince
-peel
-grate
-shred
-mix
-stir
-whisk
-beat
-knead
-marinate
-boil
-simmer
-steam
-fry
-sauté
-roast
-grill
-
-|Determiners|
-a
-an
-the
-this
-that
-these
-those
-some
-any
-many
-much
-a few
-a little
-lots of
-enough
-
-|Adjectives|
-favorite
-delicious
-yummy
-tasty
-fresh
-healthy
-homemade
-sweet
-salty
-sour
-spicy
-savory
-tangy
-fruity
-creamy
-crispy
-crunchy
-soft
-hot
-cold
-
-|Nouns|
-sandwich
-hamburger
-hot dog
-salad
-bag of potato chips
-basket of fruit
-apple
-banana
-orange
-grapes
-watermelon
-strawberries
-cheese
-crackers
-chicken
-cake
-brownies
-bottle of water
-juice
-lemonade
-soda
-carton of milk
-jar of jam
-package of cookies
-loaf of bread
-tub of ice cream
-cup of noodles
-box of cereal
-can of tuna
-packet of ketchup
-
-|Prepositions|
-with
-without
-for
-in
-on
-at
-near
-beside
-inside
-outside
-under
-
-|Conjunctions|
-and
-or
-but
-because
-so
-
-</div>
-
-
 <div class="frame">
 <div class="page">
 
@@ -350,1107 +202,728 @@ so
 </div>
 
 <script>
+async function loadData() {
 
-const ROWS = Math.ceil(1081 / 34);
-const COLS = 6;
+    const txt = await fetch("W_Page_10.txt").then(r => r.text());
 
-const leftEl = document.getElementById("left");
-const rightEl = document.getElementById("right");
+    const sections = {};
+    let current = "";
 
-const leftInput = document.getElementById("leftInput");
-const rightInput = document.getElementById("rightInput");
+    txt.split(/\r?\n/).forEach(line => {
 
-let dragging = false;
-let editing = false;
-
-let anchorCell = null;
-let focusCell = null;
-
-let tiles = [];
-let selectedTile = null;
-
-const cellText = Array.from(
-  {length:ROWS},
-  ()=>Array(COLS).fill("")
-);;
-
-/* ================= PARSING ================= */
-
-function parseLeft(text){
-  return text.replace(/\r/g,"").split("\n").map(t=>t.trim());
-}
-
-function buildTiles(text){
-
-const words = text
-  .replace(/\r/g, "")
-  .split("\n")
-  .map(line => line.trim())
-  .filter(Boolean);
-
-const totalRowsNeeded = Math.ceil(words.length / COLS);
-
-// compute overflow if any
-const overflow = totalRowsNeeded - ROWS;
-
-// shift UP only when needed so last row always fits
-const neededRows = Math.ceil(words.length / COLS);
-
-// ALWAYS bottom-align (stable behavior)
-const START_ROW = Math.max(0, ROWS - neededRows);
-
-tiles = words.map((word, index) => ({
-  id: index,
-  text: word,
-  row: Math.floor(index / COLS),
-  col: index % COLS
-}));}
-
-/* ================= UPDATE ================= */
-
-let leftRows=[];
-
-function update(){
-  // leftRows = parseLeft(leftInput.value);
-leftRows = [];
-
-  buildTiles(rightInput.value);
-
-  render();
-}
-
-// leftInput.addEventListener("input", update);
-// rightInput.addEventListener("input", update);
-
-/* ================= SELECTION ================= */
-
-function clearSelection(){
-  document.querySelectorAll(".cell.selected")
-    .forEach(c=>c.classList.remove("selected"));
-}
-
-function renderSelection(){
-  clearSelection();
-  if(!anchorCell || !focusCell) return;
-  if(anchorCell.dataset.side !== focusCell.dataset.side) return;
-
-  const side = anchorCell.dataset.side;
-
-  const r1 = Math.min(+anchorCell.dataset.r, +focusCell.dataset.r);
-  const r2 = Math.max(+anchorCell.dataset.r, +focusCell.dataset.r);
-
-  const c1 = Math.min(+(anchorCell.dataset.c||0), +(focusCell.dataset.c||0));
-  const c2 = Math.max(+(anchorCell.dataset.c||0), +(focusCell.dataset.c||0));
-
-  const target = side === "L" ? leftEl : rightEl;
-
-  for(let r=r1;r<=r2;r++){
-    for(let c=c1;c<=c2;c++){
-      const el = side === "L"
-        ? target.querySelector(`[data-r="${r}"][data-side="L"]`)
-        : target.querySelector(`[data-r="${r}"][data-c="${c}"][data-side="R"]`);
-
-      if(el) el.classList.add("selected");
-    }
-  }
-}
-
-function setSelection(a, b, additive=false){
-  if(editing) return;
-
-  if(!additive || !anchorCell){
-    anchorCell = a;
-  }
-
-  focusCell = b;
-  renderSelection();
-}
-
-/* ================= EDIT (FIXED) ================= */
-
-function edit(cell){
-
-  editing = true;
-
-  dragging = false;
-  clearSelection();
-
-  cell.contentEditable = true;
-  cell.focus();
-
-  const range = document.createRange();
-  range.selectNodeContents(cell);
-
-  const sel = window.getSelection();
-  sel.removeAllRanges();
-  sel.addRange(range);
-
-  cell.onblur = () => {
-
-    if(cell.dataset.side==="R"){
-
-      const r=+cell.dataset.r;
-      const c=+cell.dataset.c;
-
-      cellText[r][c]=cell.textContent;
-    }
-
-    editing=false;
-    cell.contentEditable=false;
-  };
-}
-/* ================= COPY / PASTE (UNCHANGED) ================= */
-
-function copy(){
-  const active = document.activeElement;
-  if (active instanceof HTMLTextAreaElement) return;
-
-  if(!anchorCell || !focusCell) return;
-
-  const selSide = anchorCell.dataset.side;
-  const target = selSide==="L"?leftEl:rightEl;
-
-  const r1 = Math.min(+anchorCell.dataset.r, +focusCell.dataset.r);
-  const r2 = Math.max(+anchorCell.dataset.r, +focusCell.dataset.r);
-
-  const c1 = Math.min(+(anchorCell.dataset.c||0), +(focusCell.dataset.c||0));
-  const c2 = Math.max(+(anchorCell.dataset.c||0), +(focusCell.dataset.c||0));
-
-  const out=[];
-
-  for(let r=r1;r<=r2;r++){
-    const row=[];
-    for(let c=c1;c<=c2;c++){
-      const el = selSide==="L"
-        ? target.querySelector(`[data-r="${r}"][data-side="L"]`)
-        : target.querySelector(`[data-r="${r}"][data-c="${c}"][data-side="R"]`);
-
-      row.push(el?.textContent||"");
-    }
-    out.push(row.join("\t"));
-  }
-
-  navigator.clipboard.writeText(out.join("\n"));
-}
-
-function paste(text){
-  const active = document.activeElement;
-  if (active instanceof HTMLTextAreaElement) return;
-
-  if(!anchorCell) return;
-
-  const rows = text.replace(/\r/g,"").split("\n").map(r=>r.split("\t"));
-
-  const target = anchorCell.dataset.side==="L"?leftEl:rightEl;
-
-  rows.forEach((row,r)=>{
-    row.forEach((val,c)=>{
-      const el = anchorCell.dataset.side==="L"
-        ? target.querySelector(`[data-r="${+anchorCell.dataset.r+r}"][data-side="L"]`)
-        : target.querySelector(`[data-r="${+anchorCell.dataset.r+r}"][data-c="${+(anchorCell.dataset.c||0)+c}"][data-side="R"]`);
-
-      if(el) el.textContent=val;
-    });
-  });
-}
-
-/* ================= CLEAR ================= */
-
-function clearCells(){
-  if(!anchorCell || !focusCell) return;
-
-  const side = anchorCell.dataset.side;
-  const target = side==="L"?leftEl:rightEl;
-
-  const r1 = Math.min(+anchorCell.dataset.r, +focusCell.dataset.r);
-  const r2 = Math.max(+anchorCell.dataset.r, +focusCell.dataset.r);
-
-  const c1 = Math.min(+(anchorCell.dataset.c||0), +(focusCell.dataset.c||0));
-  const c2 = Math.max(+(anchorCell.dataset.c||0), +(focusCell.dataset.c||0));
-
-  for(let r=r1;r<=r2;r++){
-    for(let c=c1;c<=c2;c++){
-      const el = side==="L"
-        ? target.querySelector(`[data-r="${r}"][data-side="L"]`)
-        : target.querySelector(`[data-r="${r}"][data-c="${c}"][data-side="R"]`);
-
-      if(el) el.textContent="";
-    }
-  }
-}
-
-/* ================= RENDER ================= */
-
-function render(){
-  leftEl.innerHTML="";
-  rightEl.innerHTML="";
-
-  for(let r=0;r<ROWS;r++){
-
-    const L=document.createElement("div");
-    L.className="cell";
-    L.dataset.side="L";
-    L.dataset.r=r;
-    L.textContent=leftRows[r]||"";
-
-    L.onpointerdown=(e)=>{
-      if(editing) return;
-      dragging=true;
-      setSelection(L,L,e.shiftKey);
-    };
-
-    L.onpointerenter=()=>{
-      if(dragging && anchorCell?.dataset.side==="L"){
-        focusCell=L;
-        renderSelection();
-      }
-    };
-
-    L.ondblclick=()=>edit(L);   /* FIXED */
-
-    leftEl.appendChild(L);
-
-    for(let c=0;c<COLS;c++){
-      const R=document.createElement("div");
-      R.className="cell";
-      R.dataset.side="R";
-      R.dataset.r=r;
-      R.dataset.c=c;
-      const tile = tiles.find(
-  t => t.row===r && t.col===c
-);
-
-if(tile){
-
-  const tileEl=document.createElement("div");
-
-const cls = window.POS_COLORS_INDEX?.get((tile.text || "").trim().toLowerCase()) || "";
-tileEl.className = "tile " + cls;
-
-  tileEl.textContent=tile.text;
-const len = tile.text.length;
-const size = Math.max(8, 16 - (len - 10) * 0.5);
-
-tileEl.style.fontSize = size + "px";
-
-tileEl.onclick=(e)=>{
-
-  e.stopPropagation();
-
-  if(selectedTile===tile){
-
-    tileEl.contentEditable=true;
-    tileEl.focus();
-
-    const range=document.createRange();
-    range.selectNodeContents(tileEl);
-
-    const sel=window.getSelection();
-    sel.removeAllRanges();
-    sel.addRange(range);
-
-    tileEl.onblur=()=>{
-
-      tile.text=tileEl.textContent;
-
-      tileEl.contentEditable=false;
-
-      render();
-    };
-
-    return;
-  }
-
-  selectedTile=tile;
-};
-tileEl.ondblclick=(e)=>{
-  e.stopPropagation();
-
-  tileEl.contentEditable = true;
-  tileEl.focus();
-
-  const range = document.createRange();
-  range.selectNodeContents(tileEl);
-
-  const sel = window.getSelection();
-  sel.removeAllRanges();
-  sel.addRange(range);
-
-  tileEl.onblur = ()=>{
-    tile.text = tileEl.textContent;
-    tileEl.contentEditable = false;
-  };
-};
-
-  R.appendChild(tileEl);
-
-}else{
-
-  R.textContent=cellText[r][c];
-
-}
-
-R.onpointerdown=(e)=>{
-
-if(selectedTile){
-
-  const occupied = tiles.some(
-    t => t !== selectedTile &&
-         t.row === r &&
-         t.col === c
-  );
-
-  if(occupied){
-    selectedTile = null;
-    return;
-  }
-
-  selectedTile.row = r;
-  selectedTile.col = c;
-
-  selectedTile = null;
-
-  render();
-
-  return;
-}
-
-  if(editing) return;
-
-  dragging = true;
-  setSelection(R,R,e.shiftKey);
-};
-      R.onpointerenter=()=>{
-        if(dragging && anchorCell?.dataset.side==="R"){
-          focusCell=R;
-          renderSelection();
+        if (line.startsWith("~")) {
+            current = line.substring(1).trim();
+            sections[current] = [];
+            return;
         }
-      };
 
-      R.ondblclick=()=>{
+        if (current) {
+            sections[current].push(line);
+        }
 
-  const occupied = tiles.some(
-    t => t.row===r && t.col===c
-  );
+    });
 
-  if(occupied) return;
+    document.getElementById("leftInput").value =
+        (sections["Top Left field"] || []).join("\n").trim();
 
-  edit(R);
-};
+    document.getElementById("rightInput").value =
+        (sections["Top Right Field"] || []).join("\n").trim();
 
-      rightEl.appendChild(R);
-    }
-  }
+    populateLeft(sections["Left Column"] || []);
+    populateRight(sections["Right Table"] || []);
 }
-
-/* ================= POINTER ================= */
-
-document.addEventListener("pointermove",(e)=>{
-  if(!dragging || !anchorCell) return;
-
-  const el=document.elementFromPoint(e.clientX,e.clientY);
-  if(!el || !el.classList.contains("cell")) return;
-
-  if(el.dataset.side!==anchorCell.dataset.side) return;
-
-  focusCell=el;
-  renderSelection();
-});
-
-document.addEventListener("pointerup",()=>{
-  dragging=false;
-});
-
-/* ================= KEYBOARD ================= */
-
-function getCell(side,r,c=0){
-  return document.querySelector(
-    `[data-side="${side}"][data-r="${r}"]${side==="R"?`[data-c="${c}"]`:""}`
-  );
-}
-
-function moveCell(cell,key){
-  const r=+cell.dataset.r;
-  const c=+(cell.dataset.c||0);
-  const side=cell.dataset.side;
-
-  if(key==="ArrowDown") return getCell(side,r+1,c);
-  if(key==="ArrowUp") return getCell(side,r-1,c);
-  if(key==="ArrowRight") return getCell(side,r,c+1);
-  if(key==="ArrowLeft") return getCell(side,r,c-1);
-
-  return cell;
-}
-
-document.addEventListener("keydown",(e)=>{
-  if(editing) return;
-
-  const active=document.activeElement;
-  if(active instanceof HTMLTextAreaElement) return;
-
-  if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(e.key)){
-    e.preventDefault();
-
-    const start=focusCell||anchorCell;
-    if(!start) return;
-
-    const next=moveCell(start,e.key);
-    if(!next) return;
-
-    focusCell=next;
-
-    if(e.shiftKey){
-      if(!anchorCell) anchorCell=start;
-    }else{
-      anchorCell=next;
-    }
-
-    renderSelection();
-  }
-
-  if ((e.ctrlKey||e.metaKey)&&e.key==="x"){
-    copy();
-    clearCells();
-    e.preventDefault();
-  }
-
-  if(e.key==="Delete"||e.key==="Backspace"){
-    clearCells();
-    e.preventDefault();
-  }
-});
-
-/* ================= COPY/PASTE ================= */
-
-document.addEventListener("copy",(e)=>{
-  if(document.activeElement instanceof HTMLTextAreaElement) return;
-  if(!anchorCell||!focusCell) return;
-  copy();
-  e.preventDefault();
-});
-
-document.addEventListener("paste",(e)=>{
-  if(document.activeElement instanceof HTMLTextAreaElement) return;
-  if(editing) return;
-  if(!anchorCell) return;
-  paste(e.clipboardData.getData("text"));
-  e.preventDefault();
-});
-
-update();
-
 </script>
 
 <script>
+function populateLeft(lines) {
 
-let historyStack = [];
-let historyIndex = -1;
-let isRestoring = false;
+    const sheet = document.getElementById("left");
+    
 
-function captureState() {
 
-  return {
+    lines
+        .map(line => line.trim())
+        .filter(line => line.length > 0)
+        .forEach(text => {
 
-    left: leftInput.value,
-    right: rightInput.value,
+            const cell = document.createElement("div");
+            cell.className = "cell";
 
-    tileState: tiles.map(t => ({
-      id: t.id,
-      text: t.text,
-      row: t.row,
-      col: t.col
-    })),
+const tile = document.createElement("div");
+tile.className = "tile";
+tile.textContent = text;
 
-    cells: [...document.querySelectorAll(".cell")]
-      .filter(el => !el.querySelector(".tile"))
-      .map(el => ({
-        side: el.dataset.side,
-        r: +el.dataset.r,
-        c: +(el.dataset.c || 0),
-        v: el.textContent
-      }))
-  };
-}
+window.leftTiles = window.leftTiles || [];
+window.leftTiles.push(tile);
 
-function pushState() {
+cell.appendChild(tile);
+sheet.appendChild(cell);
 
-  if(isRestoring) return;
+        });
 
-  historyStack.length = historyIndex + 1;
-
-  historyStack.push(captureState());
-
-  historyIndex = historyStack.length - 1;
-}
-
-function undo() {
-
-  if(historyIndex <= 0) return;
-
-  historyIndex--;
-
-  apply(historyStack[historyIndex]);
-}
-
-function redo() {
-
-  if(historyIndex >= historyStack.length - 1) return;
-
-  historyIndex++;
-
-  apply(historyStack[historyIndex]);
-}
-
-document.addEventListener("keydown", e => {
-
-  if(e.ctrlKey || e.metaKey){
-
-    if(e.key.toLowerCase() === "z" && !e.shiftKey){
-
-      e.preventDefault();
-      undo();
-    }
-
-    if(
-      e.key.toLowerCase() === "y" ||
-      (e.key.toLowerCase() === "z" && e.shiftKey)
-    ){
-
-      e.preventDefault();
-      redo();
-    }
-  }
-});
-
-requestAnimationFrame(pushState);
-
-</script>
-
+}</script>
 
 <script>
-function apply(state) {
+function populateRight(lines) {
 
-  isRestoring = true;
+    const sheet = document.getElementById("right");
+sheet.innerHTML = "";
+window.rightTiles = [];
 
-  leftInput.value = state.left;
-  rightInput.value = state.right;
+    let category = "";
 
-  if (typeof update === "function") update();
+    lines.forEach(line => {
 
-  requestAnimationFrame(() => {
+        line = line.trim();
 
-    /* RESTORE TILE POSITIONS */
+        if (!line) return;
 
-    if (
-      Array.isArray(state.tileState) &&
-      Array.isArray(tiles)
-    ) {
+        if (line.startsWith("|") && line.endsWith("|")) {
+            category = line.slice(1, -1);
+            return;
+        }
 
-      state.tileState.forEach(saved => {
+        const cell = document.createElement("div");
+        cell.className = "cell";
 
-        const tile = tiles.find(
-          t => t.id === saved.id
-        );
+        const tile = document.createElement("div");
+        tile.className = "tile";
 
-        if (!tile) return;
+        if (category) {
+            tile.classList.add("color-" + category);
+        }
 
-        tile.row = saved.row;
-        tile.col = saved.col;
-        tile.text = saved.text;
-      });
-    }
+        tile.textContent = line;
 
-    if (typeof render === "function") render();
+window.rightTiles.push(tile);
+cell.appendChild(tile);
+sheet.appendChild(cell);
 
-    /* RESTORE NORMAL CELL TEXT ONLY */
+    });
 
-    if (Array.isArray(state.cells)) {
-
-      state.cells.forEach(c => {
-
-        const selector =
-          c.side === "L"
-            ? `[data-side="L"][data-r="${c.r}"]`
-            : `[data-side="R"][data-r="${c.r}"][data-c="${c.c}"]`;
-
-        const el = document.querySelector(selector);
-
-        if (!el) return;
-
-        if (el.querySelector(".tile")) return;
-
-        el.textContent = c.v;
-      });
-    }
-
-    isRestoring = false;
-
-  });
 }
 </script>
+
+<script>
+window.addEventListener("DOMContentLoaded", async () => {
+    await loadData();
+    buildGrid();
+});</script>
 
 <script>
 (function(){
 
-  let activeSectionTitle = null;
+const LEFT_ROWS = 31;     // notebook rows
+const RIGHT_ROWS = 31;
+const RIGHT_COLS = 6;
 
-  window.getTileSourceText = function getTileSourceText(){
+window.buildGrid = buildGrid;
 
-    const external = (rightInput.value || "").trim();
+function buildGrid(){
 
-    if(external){
-      return external;
-    }
-
-    const raw = document.getElementById("rawTextSource");
-
-    return raw ? raw.textContent : "";
-  }
-
-function parseSectionedText(text){
-
-  text = text.replace(/\r/g,"");
-
-  const sections = [];
-
-  let current = null;
-
-  text.split("\n").forEach(line => {
-
-    const trimmed = line.trim();
-
-    // SECTION HEADER
-    if(trimmed.startsWith("~")){
-
-      current = {
-        heading: trimmed.slice(1).trim(),
-        body:[]
-      };
-
-      sections.push(current);
-      return;
-    }
-
-    if(!current) return;
-
-    // ❌ DROP SUBHEADERS LIKE |Nouns|
-    if(trimmed.startsWith("|") && trimmed.endsWith("|")){
-      return;
-    }
-
-    current.body.push(line);
-  });
-
-  return sections;
+    buildLeft();
+    buildRight();
 }
-  buildTiles = function(){
 
-  const sourceText = getTileSourceText();
-  const sections = parseSectionedText(sourceText);
+/* ==========================
+   LEFT COLUMN
+========================== */
 
-  activeSectionTitle = null;
+function buildLeft(){
 
-  const activeSection = sections.find(
-    section => /^Active Section\b/i.test(section.heading)
-  );
+    const sheet = document.getElementById("left");
 
-  const words = [];
+// NO DOM SCRAPING — tiles are already in memory
+sheet.innerHTML = "";
 
-  if(activeSection){
+    for(let r=0;r<LEFT_ROWS;r++){
 
-    activeSectionTitle = activeSection.heading
-      .replace(/^Active Section\b\s*/i,"")
-      .trim();
+        const cell = document.createElement("div");
+        cell.className = "cell";
 
-    activeSection.body
-      .map(line => line.trim())
-      .filter(Boolean)
-      .filter(line =>
-        !(line.startsWith("|") && line.endsWith("|")) &&
-        !(line.startsWith("~"))
-      )
-      .forEach(line => words.push(line));
-  }
+if(window.leftTiles && window.leftTiles[r]){
+            cell.appendChild(window.leftTiles[r]);
+        }
+        sheet.appendChild(cell);
+    }
+}
 
-  const neededRows = Math.ceil(words.length / COLS);
+/* ==========================
+   RIGHT GRID
+========================== */
 
-const TOP_MARGIN = 10;
+function buildRight(){
 
-tiles = words.map((word, index) => {
-  const row = Math.floor(index / COLS);
-  const col = index % COLS;
+    const sheet = document.getElementById("right");
 
-  return {
-    id: index,
-    text: word,
-    row: TOP_MARGIN + row,
-    col
-  };
+    
+
+    sheet.innerHTML = "";
+
+    const totalCells = RIGHT_ROWS * RIGHT_COLS;
+
+    for(let i = 0; i < totalCells; i++){
+
+        const cell = document.createElement("div");
+        cell.className = "cell";
+
+const tile = window.rightTiles ? window.rightTiles[i] : null;
+
+if(tile){
+    cell.appendChild(tile);
+}
+if(tile){
+    cell.appendChild(tile);
+}
+
+sheet.appendChild(cell);
+    }
+
+}})();
+</script>
+
+
+<script>
+(async function(){
+
+let selectedTile = null;
+
+/* -----------------------------
+   Helpers
+----------------------------- */
+
+function getTile(cell){
+    return cell.querySelector(".tile");
+}
+
+function isEmpty(cell){
+    return !getTile(cell);
+}
+
+function clearSelection(){
+
+    document
+        .querySelectorAll(".tile.selectedTile")
+        .forEach(t => t.classList.remove("selectedTile"));
+
+    selectedTile = null;
+}
+
+function selectTile(tile){
+
+    clearSelection();
+
+    selectedTile = tile;
+
+    tile.classList.add("selectedTile");
+}
+
+function allCells(){
+
+    return document.querySelectorAll(
+        "#left .cell, #right .cell"
+    );
+}
+
+/* -----------------------------
+   Style
+----------------------------- */
+
+const style = document.createElement("style");
+
+style.textContent = `
+.tile.selectedTile{
+    outline:3px solid #2d7cff;
+    outline-offset:-2px;
+}
+`;
+
+document.head.appendChild(style);
+
+/* -----------------------------
+   Install handlers
+----------------------------- */
+
+function install(){
+
+    allCells().forEach(cell=>{
+
+        if(cell.dataset.tileReady) return;
+
+        cell.dataset.tileReady = "1";
+
+        cell.addEventListener("click",function(e){
+
+            const tile = getTile(cell);
+
+            /* CLICKED A TILE */
+
+            if(tile){
+
+                selectTile(tile);
+
+                e.stopPropagation();
+
+                return;
+            }
+
+            /* CLICKED EMPTY CELL */
+
+            if(selectedTile){
+
+                cell.appendChild(selectedTile);
+
+                clearSelection();
+            }
+
+        });
+
+    });
+
+}
+
+/* -----------------------------
+   Observe future tiles
+----------------------------- */
+
+const observer = new MutationObserver(install);
+
+observer.observe(document.body,{
+    childList:true,
+    subtree:true
 });
 
-  window.activeSectionTitle = activeSectionTitle;
-};
+install();
 
-  update();
+/* -----------------------------
+   Click page = deselect
+----------------------------- */
+
+document.addEventListener("click",function(e){
+
+    if(
+        e.target.closest(".tile")==null
+    ){
+        clearSelection();
+    }
+
+});
 
 })();
 </script>
 
-
 <script>
 (function(){
 
-  const CLEAR_TILE_CLASS = "clearTile";
+let editingTile = null;
+let oldText = "";
 
-  if(!document.getElementById("clearTileStyle")){
-    const style = document.createElement("style");
-    style.id = "clearTileStyle";
+/* -----------------------------
+   Helpers
+----------------------------- */
 
-    style.textContent = `
-      .tile.${CLEAR_TILE_CLASS}{
-        background:transparent !important;
-      }
-    `;
+function allCells(){
+    return document.querySelectorAll(
+        "#left .cell, #right .cell"
+    );
+}
 
-    document.head.appendChild(style);
-  }
+function getTile(cell){
+    return cell.querySelector(".tile");
+}
 
-  const originalRender = render;
+/* -----------------------------
+   Begin editing
+----------------------------- */
 
-  render = function(){
+function editTile(tile){
 
-    originalRender();
+    if(editingTile) return;
 
-    document.querySelectorAll(".tile").forEach(tileEl => {
+    editingTile = tile;
+    oldText = tile.textContent;
 
-      const tileObj = tiles.find(
-        t => t.text === tileEl.textContent
-      );
-
-      if(tileObj && tileObj.clearTile){
-        tileEl.classList.add(CLEAR_TILE_CLASS);
-      }
-    });
-  };
-
-  const originalEdit = edit;
-
-  edit = function(cell){
-
-    if(cell.dataset.side !== "R"){
-      return originalEdit(cell);
-    }
-
-    editing = true;
-
-    dragging = false;
-    clearSelection();
-
-    cell.contentEditable = true;
-    cell.focus();
+    tile.contentEditable = true;
+    tile.focus();
 
     const range = document.createRange();
-    range.selectNodeContents(cell);
+    range.selectNodeContents(tile);
 
     const sel = window.getSelection();
     sel.removeAllRanges();
     sel.addRange(range);
+}
 
-    cell.onblur = () => {
+/* -----------------------------
+   Finish editing
+----------------------------- */
 
-      const text = cell.textContent.trim();
+function finishEdit(save){
 
-      const r = +cell.dataset.r;
-      const c = +cell.dataset.c;
+    if(!editingTile) return;
 
-      cell.contentEditable = false;
-      editing = false;
+    if(!save){
+        editingTile.textContent = oldText;
+    }
 
-      if(!text){
-        cellText[r][c] = "";
+    if(editingTile.textContent.trim()===""){
+        editingTile.parentNode.removeChild(editingTile);
+    }
+
+    editingTile.contentEditable = false;
+    editingTile = null;
+}
+
+/* -----------------------------
+   Install handlers
+----------------------------- */
+
+function install(){
+
+    allCells().forEach(cell=>{
+
+        if(cell.dataset.editReady) return;
+
+        cell.dataset.editReady = "1";
+
+        /* DOUBLE CLICK */
+
+        cell.addEventListener("dblclick",function(e){
+
+            let tile = getTile(cell);
+
+            /* Existing tile */
+
+            if(tile){
+
+                editTile(tile);
+                e.stopPropagation();
+                return;
+            }
+
+            /* Empty cell */
+
+            tile = document.createElement("div");
+            tile.className = "tile";
+            tile.textContent = "";
+
+            cell.appendChild(tile);
+
+            editTile(tile);
+
+        });
+
+    });
+
+}
+
+install();
+
+const observer = new MutationObserver(install);
+
+observer.observe(document.body,{
+    childList:true,
+    subtree:true
+});
+
+/* -----------------------------
+   Blur saves
+----------------------------- */
+
+document.addEventListener("focusout",function(){
+
+    if(editingTile){
+        finishEdit(true);
+    }
+
+},true);
+
+/* -----------------------------
+   Keyboard
+----------------------------- */
+
+document.addEventListener("keydown",function(e){
+
+    /* Editing */
+
+    if(editingTile){
+
+        if(e.key==="Escape"){
+
+            e.preventDefault();
+            finishEdit(false);
+        }
+
         return;
-      }
+    }
 
-      cellText[r][c] = "";
+    /* Delete selected tile */
 
-      const occupied = tiles.some(
-        t => t.row === r && t.col === c
-      );
+    const selected =
+        document.querySelector(".tile.selectedTile");
 
-      if(occupied){
-        render();
-        return;
-      }
+    if(!selected) return;
 
-      tiles.push({
-        id: Date.now() + Math.random(),
-        text,
-        row: r,
-        col: c,
-        clearTile: true
-      });
+    if(
+        e.key==="Delete" ||
+        e.key==="Backspace"
+    ){
 
-      render();
-    };
-  };
-
-})();
-</script>
-
-<script>
-(function(){
-
-  // --- safety: wait for global tiles/render ---
-  function ready(fn){
-    if (typeof tiles !== "undefined" && typeof render === "function") fn();
-    else requestAnimationFrame(() => ready(fn));
-  }
-
-  ready(() => {
-
-    /* =========================
-       CORE DELETE FUNCTION
-    ========================== */
-
-    window.deleteTile = function(tile){
-      const idx = tiles.findIndex(t => t.id === tile.id);
-      if(idx !== -1){
-        tiles.splice(idx, 1);
-      }
-    };
-
-    /* =========================
-       KEYBOARD DELETE (selectedTile)
-    ========================== */
-
-    document.addEventListener("keydown", (e) => {
-
-      const active = document.activeElement;
-      if(active instanceof HTMLTextAreaElement) return;
-
-      if(!selectedTile) return;
-
-      if(e.key === "Delete" || e.key === "Backspace"){
         e.preventDefault();
 
-        deleteTile(selectedTile);
-        selectedTile = null;
+        selected.remove();
+    }
 
-        render();
-      }
+});
+
+})();
+</script>
+
+<script>
+
+/* ==========================================================
+   PNG OVERLAY TOOL (FIXED: overlay-based placement)
+   Drop in before </body>
+========================================================== */
+
+(async function(){
+
+/* ==========================================================
+   CONFIG
+========================================================== */
+
+let PNGS = [];
+
+async function loadOverlayImages(){
+
+    const txt = await fetch("data.txt").then(r => r.text());
+
+    let inSection = false;
+
+    txt.split(/\r?\n/).forEach(line => {
+
+        line = line.trim();
+
+        if(line.startsWith("~")){
+
+            inSection = line.substring(1).trim() === "Image References";
+            return;
+        }
+
+        if(!inSection || !line) return;
+
+        // filename|width (width optional)
+        const [file,width] = line.split("|");
+
+        PNGS.push({
+            label: file.replace(/\.[^.]+$/,""),
+            file: file.trim(),
+            width: parseInt(width) || 120
+        });
 
     });
 
-    /* =========================
-       PATCH: EMPTY EDIT = DELETE
-    ========================== */
+}
+
+/* ==========================================================
+   CSS
+========================================================== */
+
+const style = document.createElement("style");
+
+style.textContent = `
+#pngToolbar{
+    position:fixed;
+    left:50%;
+    transform:translateX(-50%);
+    bottom:12px;
+    display:flex;
+    gap:6px;
+    padding:6px;
+    background:#333;
+    border-radius:6px;
+    z-index:2147483647;
+    box-shadow:0 2px 10px rgba(0,0,0,.4);
+}
+
+#pngToolbar button{
+    font-size:12px;
+    padding:5px 12px;
+    cursor:pointer;
+}
+
+#pngToolbar button.selected{
+    background:#4a90e2;
+    color:white;
+}
+
+/* FULL PAGE OVERLAY */
+#overlayLayer{
+    position:absolute;
+    inset:0;
+    z-index:99999;
+    pointer-events:none; /* OFF by default */
+}
+
+/* draggable PNGs */
+.overlayPng{
+    position:absolute;
+    pointer-events:auto;
+    cursor:move;
+    user-select:none;
+    -webkit-user-drag:none;
+}
+`;
+
+document.head.appendChild(style);
+
+/* ==========================================================
+   PAGE CONTAINER
+========================================================== */
+
+const page = document.querySelector(".page");
+if(!page){
+    console.error("No .page found.");
+    return;
+}
+
+if(getComputedStyle(page).position === "static"){
+    page.style.position = "relative";
+}
+
+/* ==========================================================
+   OVERLAY
+========================================================== */
+
+const overlay = document.createElement("div");
+overlay.id = "overlayLayer";
+page.appendChild(overlay);
 
 
-    const originalEdit = edit;
+await loadOverlayImages();
 
-    edit = function(cell){
 
-      if(cell.dataset.side !== "R"){
-        return originalEdit(cell);
-      }
+/* ==========================================================
+   TOOLBAR
+========================================================== */
 
-      editing = true;
-      dragging = false;
-      clearSelection();
+const bar = document.createElement("div");
+bar.id = "pngToolbar";
+document.body.appendChild(bar);
 
-      cell.contentEditable = true;
-      cell.focus();
+let placeMode = null;
 
-      const range = document.createRange();
-      range.selectNodeContents(cell);
+/* ==========================================================
+   ENABLE / DISABLE PLACEMENT MODE
+========================================================== */
 
-      const sel = window.getSelection();
-      sel.removeAllRanges();
-      sel.addRange(range);
+function setPlaceMode(mode){
+    placeMode = mode;
 
-      cell.onblur = () => {
+    // highlight button state handled externally
+    overlay.style.pointerEvents = mode ? "auto" : "none";
+}
 
-        const r = +cell.dataset.r;
-        const c = +cell.dataset.c;
+/* ==========================================================
+   BUTTONS
+========================================================== */
 
-        const text = cell.textContent.trim();
+PNGS.forEach(item => {
+    const b = document.createElement("button");
+    b.textContent = item.label;
 
-        cell.contentEditable = false;
-        editing = false;
+    b.onclick = () => {
+        [...bar.querySelectorAll("button")]
+            .forEach(x => x.classList.remove("selected"));
 
-        // --- DELETE IF EMPTY ---
-        if(!text){
-          const tile = tiles.find(t => t.row === r && t.col === c);
-          if(tile) deleteTile(tile);
-          render();
-          return;
-        }
-
-        // otherwise update tile if one exists
-        const tile = tiles.find(t => t.row === r && t.col === c);
-
-        if(tile){
-          tile.text = text;
-        } else {
-          tiles.push({
-            id: Date.now() + Math.random(),
-            text,
-            row: r,
-            col: c
-          });
-        }
-
-        render();
-      };
+        b.classList.add("selected");
+        setPlaceMode(item);
     };
 
-  });
+    bar.appendChild(b);
+});
 
-})();
-</script>
+/* CLEAR */
+const clear = document.createElement("button");
+clear.textContent = "Clear";
 
-<script>
-(function(){
-
-  window.POS_COLORS = {
-    Nouns: "color-Nouns",
-    Verbs: "color-Verbs",
-    Adjectives: "color-Adjectives",
-    Adverbs: "color-Adverbs",
-    Determiners: "color-Determiners",
-    Pronouns: "color-Pronouns",
-    Prepositions: "color-Prepositions",
-    Conjunctions: "color-Conjunctions",
-    Interjections: "color-Interjections"
-  };
-
-  function parsePOSSections(text){
-
-    const sections = [];
-    let current = null;
-
-    text.split("\n").forEach(line => {
-
-      const t = line.trim();
-      if(!t) return;
-
-      if(t.startsWith("|") && t.endsWith("|")){
-        current = t.replaceAll("|","").trim();
-        return;
-      }
-
-      if(current){
-        sections.push({
-          pos: current,
-          word: t
-        });
-      }
-    });
-
-    return sections;
-  }
-
-  function buildPOSMap(){
-
-    const sourceText =
-      (typeof getTileSourceText === "function")
-        ? getTileSourceText()
-        : "";
-
-    const parsed = parsePOSSections(sourceText);
-
-    const map = new Map();
-
-    parsed.forEach((item, i) => {
-      map.set((item.word || "").trim().toLowerCase(), POS_COLORS[item.pos] || "");
-    });
-
-    return map;
-  }
-
-window.applyPOS = function applyPOS(){
-  const posMap = buildPOSMap();
-  window.POS_COLORS_INDEX = posMap;
-
-  document.querySelectorAll(".tile").forEach(tileEl => {
-    const word = (tileEl.textContent || "").trim().toLowerCase();
-    const cls = posMap.get(word);
-
-    tileEl.classList.remove(
-      "color-Nouns",
-      "color-Verbs",
-      "color-Adjectives",
-      "color-Adverbs",
-      "color-Determiners",
-      "color-Pronouns",
-      "color-Prepositions",
-      "color-Conjunctions",
-      "color-Interjections"
-    );
-
-    if (cls) tileEl.classList.add(cls);
-  });
+clear.onclick = () => {
+    overlay.innerHTML = "";
 };
 
-  applyPOS();
+bar.appendChild(clear);
+
+/* ==========================================================
+   PLACEMENT (NOW ON OVERLAY ONLY)
+========================================================== */
+
+overlay.addEventListener("pointerdown", function(e){
+
+    if(!placeMode) return;
+
+    const rect = page.getBoundingClientRect();
+
+    const img = document.createElement("img");
+    img.className = "overlayPng";
+    img.src = placeMode.file;
+    img.style.width = placeMode.width + "px";
+
+    img.style.left =
+        (e.clientX - rect.left - placeMode.width / 2) + "px";
+
+    img.style.top =
+        (e.clientY - rect.top - placeMode.width / 2) + "px";
+
+    overlay.appendChild(img);
+    enableDrag(img);
+
+    // EXIT placement mode immediately
+    setPlaceMode(null);
+
+    [...bar.querySelectorAll("button")]
+        .forEach(x => x.classList.remove("selected"));
+});
+
+/* ==========================================================
+   DRAGGING
+========================================================== */
+
+function enableDrag(el){
+
+    el.addEventListener("pointerdown", function(ev){
+        ev.stopPropagation();
+        ev.preventDefault();
+
+        const rect = page.getBoundingClientRect();
+
+        const startLeft = parseFloat(el.style.left) || 0;
+        const startTop = parseFloat(el.style.top) || 0;
+
+        const offsetX = (ev.clientX - rect.left) - startLeft;
+        const offsetY = (ev.clientY - rect.top) - startTop;
+
+        function move(e){
+            el.style.left =
+                ((e.clientX - rect.left) - offsetX) + "px";
+
+            el.style.top =
+                ((e.clientY - rect.top) - offsetY) + "px";
+        }
+
+        function up(){
+            window.removeEventListener("pointermove", move);
+            window.removeEventListener("pointerup", up);
+        }
+
+        window.addEventListener("pointermove", move);
+        window.addEventListener("pointerup", up);
+    });
+}
 
 })();
-</script>
-
-<script>
-
-(function () {
-  const rightInput = document.getElementById("rightInput");
-  if (!rightInput) return;
-
-  // Create overlay
-  const overlay = document.createElement("div");
-
-  overlay.innerHTML = `
-In a 4-student group, plan a party or picnic. Say what you want to bring or make for the picnic or party. Make comments on each other's suggestions. Each student should contribute 3-4 complete sentences. Then find a location to video your role play. Send the video in LINE. Report back to class before the end of the lesson.
-  `;
-
-  // Style it to sit on top of the textarea
-  Object.assign(overlay.style, {
-    position: "absolute",
-    pointerEvents: "none",
-    color: "#777",
-    fontFamily: "inherit",
-    fontSize: "14px",
-    whiteSpace: "pre-line",
-    padding: "10px 8px",
-    zIndex: 9999,
-    left: "0px",
-    top: "0px",
-  });
-
-  // Ensure parent can anchor overlay safely
-  const parent = rightInput.parentElement;
-  if (!parent) return;
-
-  // Make parent positioning context (safe, minimal impact)
-  if (getComputedStyle(parent).position === "static") {
-    parent.style.position = "relative";
-  }
-
-  parent.appendChild(overlay);
-
-  function sync() {
-    const rect = rightInput.getBoundingClientRect();
-    const parentRect = parent.getBoundingClientRect();
-
-    overlay.style.width = rect.width + "px";
-    overlay.style.height = rect.height + "px";
-
-    overlay.style.left = (rightInput.offsetLeft) + "px";
-    overlay.style.top = (rightInput.offsetTop) + "px";
-  }
-
-  sync();
-  window.addEventListener("resize", sync);
-})();
 
 </script>
+
 
 </body>
 </html>
