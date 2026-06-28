@@ -238,26 +238,10 @@ async function loadData() {
 function populateLeft(lines) {
 
     const sheet = document.getElementById("left");
-    sheet.innerHTML = "";
-
-    lines
-        .map(line => line.trim())
-        .filter(line => line.length > 0)
-        .forEach(text => {
-
-            const cell = document.createElement("div");
-            cell.className = "cell";
-
-            const tile = document.createElement("div");
-            tile.className = "tile";
-            tile.textContent = text;
-
-            cell.appendChild(tile);
-            sheet.appendChild(cell);
-
-        });
-
-}</script>
+// DO NOT rebuild DOM structure.
+// The DOM already exists from populateRight().
+return;
+</script>
 
 <script>
 function populateRight(lines) {
@@ -301,10 +285,8 @@ function populateRight(lines) {
 <script>
 window.addEventListener("DOMContentLoaded", async () => {
     await loadData();
-    window.addEventListener("DOMContentLoaded", async () => {
-    await loadData();
-});
-</script>
+    buildGrid();
+});</script>
 
 <script>
 (function(){
@@ -352,9 +334,31 @@ function buildLeft(){
 
 function buildRight(){
 
-    return;
+const sheet = document.getElementById("right");
+
+// only grab tiles that are already in a stable DOM state
+const tiles = [...sheet.querySelectorAll(".tile")];
+
+    let index = 0;
+
+    for(let r=0;r<RIGHT_ROWS;r++){
+
+        for(let c=0;c<RIGHT_COLS;c++){
+
+            const cell = document.createElement("div");
+            cell.className = "cell";
+
+            if(index < tiles.length){
+                cell.appendChild(tiles[index]);
+                index++;
+            }
+
+            sheet.appendChild(cell);
+        }
+    }
 
 }
+
 })();
 </script>
 
@@ -365,44 +369,17 @@ function buildRight(){
    Drop in before </body>
 ========================================================== */
 
-(async function(){
+(function(){
 
 /* ==========================================================
    CONFIG
 ========================================================== */
 
-let PNGS = [];
-
-async function loadOverlayImages(){
-
-    const txt = await fetch("data.txt").then(r => r.text());
-
-    let inSection = false;
-
-    txt.split(/\r?\n/).forEach(line => {
-
-        line = line.trim();
-
-        if(line.startsWith("~")){
-
-            inSection = line.substring(1).trim() === "Image References";
-            return;
-        }
-
-        if(!inSection || !line) return;
-
-        // filename|width (width optional)
-        const [file,width] = line.split("|");
-
-        PNGS.push({
-            label: file.replace(/\.[^.]+$/,""),
-            file: file.trim(),
-            width: parseInt(width) || 120
-        });
-
-    });
-
-}
+const PNGS = [
+    { label:"Small", file:"1overlay-small.png", width:80 },
+    { label:"Large", file:"1overlay-large.png", width:140 },
+    { label:"Circle", file:"Circleoverlay.png", width:120 }
+];
 
 /* ==========================================================
    CSS
@@ -477,10 +454,6 @@ if(getComputedStyle(page).position === "static"){
 const overlay = document.createElement("div");
 overlay.id = "overlayLayer";
 page.appendChild(overlay);
-
-
-await loadOverlayImages();
-
 
 /* ==========================================================
    TOOLBAR
@@ -604,7 +577,7 @@ function enableDrag(el){
 </script>
 
 <script>
-(async function(){
+(function(){
 
 let selectedTile = null;
 
@@ -706,14 +679,13 @@ function install(){
    Observe future tiles
 ----------------------------- */
 
-const observer = new MutationObserver(() => {
-    requestAnimationFrame(install);
+const observer = new MutationObserver(install);
+
+observer.observe(document.body,{
+    childList:true,
+    subtree:true
 });
 
-observer.observe(document.body, {
-    childList: true,
-    subtree: true
-});
 install();
 
 /* -----------------------------
