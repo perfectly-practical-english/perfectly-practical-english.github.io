@@ -301,8 +301,10 @@ function populateRight(lines) {
 <script>
 window.addEventListener("DOMContentLoaded", async () => {
     await loadData();
-    buildGrid();
-});</script>
+    window.addEventListener("DOMContentLoaded", async () => {
+    await loadData();
+});
+</script>
 
 <script>
 (function(){
@@ -704,13 +706,14 @@ function install(){
    Observe future tiles
 ----------------------------- */
 
-const observer = new MutationObserver(install);
-
-observer.observe(document.body,{
-    childList:true,
-    subtree:true
+const observer = new MutationObserver(() => {
+    requestAnimationFrame(install);
 });
 
+observer.observe(document.body, {
+    childList: true,
+    subtree: true
+});
 install();
 
 /* -----------------------------
