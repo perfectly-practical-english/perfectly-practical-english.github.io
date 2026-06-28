@@ -185,7 +185,6 @@ drizzle
 6_Can_of_Soda.png
 7_Candy_Wrapper.png
 8_Package_of_Cookies.png
-9 Final 7-11 Whacky Packs ChatGPT Image Jun 25, 2026, 01_43_58 AM (2).png
 9_Carton_of_Juice.png
 10_Bottle_of_Yogurt_Drink.png
 11_Carton_of_Milk.png
