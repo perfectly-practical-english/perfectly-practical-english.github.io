@@ -737,9 +737,16 @@ style.textContent = `
     left:50%;
     transform:translateX(-50%);
     bottom:12px;
+
     display:flex;
+    flex-direction:column;
+
     gap:6px;
     padding:6px;
+
+    max-height:40vh;
+    overflow-y:auto;
+
     background:#333;
     border-radius:6px;
     z-index:2147483647;
@@ -747,16 +754,18 @@ style.textContent = `
 }
 
 #pngToolbar button{
+    width:180px;
     font-size:12px;
     padding:5px 12px;
     cursor:pointer;
+    text-align:left;
+    white-space:nowrap;
 }
 
 #pngToolbar button.selected{
     background:#4a90e2;
     color:white;
 }
-
 /* FULL PAGE OVERLAY */
 #overlayLayer{
     position:absolute;
