@@ -800,7 +800,14 @@ overlay.id = "overlayLayer";
 page.appendChild(overlay);
 
 
-await loadOverlayImages();
+try{
+    await loadOverlayImages();
+    console.log("PNGS loaded:", PNGS);
+}catch(err){
+    console.error("Failed to load data.txt:", err);
+}
+
+console.log("PNGS:", PNGS);
 
 
 /* ==========================================================
