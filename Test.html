@@ -369,11 +369,38 @@ function buildRight(){
    CONFIG
 ========================================================== */
 
-const PNGS = [
-    { label:"Small", file:"1overlay-small.png", width:80 },
-    { label:"Large", file:"1overlay-large.png", width:140 },
-    { label:"Circle", file:"Circleoverlay.png", width:120 }
-];
+let PNGS = [];
+
+async function loadOverlayImages(){
+
+    const txt = await fetch("data.txt").then(r => r.text());
+
+    let inSection = false;
+
+    txt.split(/\r?\n/).forEach(line => {
+
+        line = line.trim();
+
+        if(line.startsWith("~")){
+
+            inSection = line.substring(1).trim() === "Image References";
+            return;
+        }
+
+        if(!inSection || !line) return;
+
+        // filename|width (width optional)
+        const [file,width] = line.split("|");
+
+        PNGS.push({
+            label: file.replace(/\.[^.]+$/,""),
+            file: file.trim(),
+            width: parseInt(width) || 120
+        });
+
+    });
+
+}
 
 /* ==========================================================
    CSS
@@ -448,6 +475,10 @@ if(getComputedStyle(page).position === "static"){
 const overlay = document.createElement("div");
 overlay.id = "overlayLayer";
 page.appendChild(overlay);
+
+
+await loadOverlayImages();
+
 
 /* ==========================================================
    TOOLBAR
@@ -571,7 +602,7 @@ function enableDrag(el){
 </script>
 
 <script>
-(function(){
+(async function(){
 
 let selectedTile = null;
 
