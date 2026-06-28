@@ -216,15 +216,43 @@ async function loadData() {
 
     txt.split(/\r?\n/).forEach(line => {
 
-        if (line.startsWith("~")) {
-            current = line.substring(1).trim();
-            sections[current] = [];
-            return;
-        }
+if (line.startsWith("~")) {
 
-        if (current) {
-            sections[current].push(line);
-        }
+    const name = line.slice(1).trim();
+
+    // ONLY accept known sections
+    const allowed = new Set([
+        "Left Column",
+        "Right Table",
+        "Top Left field",
+        "Top Right Field",
+        "Image References"
+    ]);
+
+    if (!allowed.has(name)) {
+        current = null; // 🚫 block unknown or malformed headers
+        return;
+    }
+
+// 🔥 CRITICAL ADDITION (close previous section cleanly)
+if (current && sections[current]) {
+    sections[current] = sections[current].filter(Boolean);
+}
+
+// switch section
+current = name;
+sections[current] = [];
+
+return;
+}
+
+if (!current) return;
+
+// extra safety: ignore stray section headers inside content
+if (line.startsWith("~")) return;
+
+// strict ownership push
+sections[current].push(line);
 
     });
 
@@ -234,7 +262,13 @@ async function loadData() {
     document.getElementById("rightInput").value =
         (sections["Top Right Field"] || []).join("\n").trim();
 
-    populateLeft(sections["Left Column"] || []);
+    const leftRaw = sections["Left Column"] || [];
+
+const leftClean = leftRaw.filter(line => {
+    return line && !line.startsWith("~");
+});
+
+populateLeft(leftClean);
     populateRight(sections["Right Table"] || []);
 }
 </script>
