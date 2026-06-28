@@ -756,27 +756,33 @@ border-radius:6px;
 }
 #pngToolbar button{
     width:180px;
-    font-size:10px;
-    padding:5px 12px;
+
+    font-size:12px;
+    padding:8px 10px;   /* ↑ makes them taller and readable */
+
     cursor:pointer;
     text-align:left;
     white-space:nowrap;
 
-    background:#9a6ad6;      /* slightly darker purple */
-    color:white;
-    border:none;
+    background:#ffffff;            /* white buttons */
+    color:#000000;                /* black text */
+
+    border:2px solid var(--outer); /* purple border */
     border-radius:4px;
 
-    overflow:hidden;         /* prevents text spill */
-}
-
-#pngToolbar button:hover{
-    background:#a87be0;      /* subtle hover lift */
+    overflow:hidden;
 }
 
 #pngToolbar button.selected{
-    background:#7a4bd6;      /* stronger purple highlight */
-    color:white;
+    background:#e6dcff;   /* soft purple tint */
+    border-color:#7a4bd6; /* stronger purple edge */
+    color:#000;
+}
+
+#pngToolbar button:hover{
+    background:#f3f0ff;
+}
+
 }/* FULL PAGE OVERLAY */
 #overlayLayer{
     position:absolute;
