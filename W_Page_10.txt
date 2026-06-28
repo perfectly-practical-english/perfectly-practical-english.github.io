@@ -176,7 +176,7 @@ stuff
 drizzle
 
 ~Image References
-David-small.png|125
+David_Chef-large.png|200
 David-large.png|200
 1_Packet_of_Chips.png|125
 3_Cup_of_Noodles.png|125

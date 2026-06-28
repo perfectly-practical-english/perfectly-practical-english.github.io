@@ -13,14 +13,26 @@
     overflow: hidden;
   }
 
+  /* Wrapper for scaling */
+  .grid-wrapper {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+  }
+
   /* 5x5 GRID */
   .grid {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
     gap: 10px;
     padding: 10px;
+    width: 100vw;
     height: 100vh;
     box-sizing: border-box;
+
+    /* Scale entire layout to half size */
+    transform: scale(0.5);
+    transform-origin: top left;
   }
 
   /* SQUARE TILE */
@@ -28,7 +40,6 @@
     background: #6a1bb1;
     border-radius: 18px;
 
-    /* KEY FIX: force square shape */
     aspect-ratio: 1 / 1;
     width: 100%;
 
@@ -53,11 +64,8 @@
     width: 60%;
     height: 60%;
     object-fit: contain;
-
-    /* extra centering safety */
     display: block;
     margin: auto;
-
     pointer-events: none;
   }
 </style>
@@ -65,25 +73,25 @@
 
 <body>
 
-<div class="grid" id="grid"></div>
+<div class="grid-wrapper">
+  <div class="grid" id="grid"></div>
+</div>
 
 <script>
 const rawData = `
-dining.png | C:\Users\User\Documents\PerfectlyPracticalEnglish.GitHub.app_6_10_2026\A_Seating_Chart_Optimum.html
-book.png | C:\Users\User\Documents\PerfectlyPracticalEnglish.GitHub.app_6_10_2026\W_Composition_Book_Food_Product.html
-presentation.png | C:\Users\User\Documents\PerfectlyPracticalEnglish.GitHub.app_6_10_2026\index.html
-folder.png | C:\Users\User\Documents\PerfectlyPracticalEnglish.GitHub.app_6_10_2026
-exam.png | C:\Users\User\Documents\PerfectlyPracticalEnglish.GitHub.app_6_10_2026\!!2026 Roll Sheets and Grades 7 David Cherry.xlsx
-coffee-cup.png | C:\Users\User\Documents\PerfectlyPracticalEnglish.GitHub.app_6_10_2026\A_Break_Time.html
-clock.png | C:\Users\User\Documents\PerfectlyPracticalEnglish.GitHub.app_6_10_2026\A_Clock.html
-flash-card.png | C:\Users\User\Documents\PerfectlyPracticalEnglish.GitHub.app_6_10_2026\V_Flash_Cards_Grade_7.html
-rabbit.png | C:\Users\User\Documents\PerfectlyPracticalEnglish.GitHub.app_6_10_2026\R_A_Basic_English_Primer.html
-tally-marks.png | C:\Users\User\Documents\PerfectlyPracticalEnglish.GitHub.app_6_10_2026\Tallyman.html
-tally-marks2.png | C:\Users\User\Documents\PerfectlyPracticalEnglish.GitHub.app_6_10_2026\Tallyman.html
-audio.png | D:\Shortcut Folder\Audio
-big-ben.png | D:\Shortcut Folder\PPE URL.url
-error.png | D:\Shortcut Folder\Junk
-schedule.png | C:\Users\User\Documents\PerfectlyPracticalEnglish.GitHub.app_6_10_2026\A_My_Schedule.html
+dining.png | A_Seating_Chart_Optimum.html
+presentation.png | index.html
+folder.png | .
+coffee-cup.png | A_Break_Time.html
+clock.png | A_Clock.html
+flash-card.png | V_Flash_Cards_Grade_7.html
+rabbit.png | R_A_Basic_English_Primer.html
+tally-marks.png | Tallyman.html
+tally-marks2.png | Tallyman.html
+audio.png | Audio
+big-ben.png | PPE URL.url
+error.png | Junk
+schedule.png | A_My_Schedule.html
 `;
 
 const items = rawData
@@ -100,9 +108,11 @@ items.forEach(item => {
   const a = document.createElement("a");
   a.className = "tile";
   a.href = item.page;
+a.target = "_blank";
+
 
   const img = document.createElement("img");
-  img.src = `icons/${item.icon}`;
+  img.src = item.icon;
 
   a.appendChild(img);
   grid.appendChild(a);
