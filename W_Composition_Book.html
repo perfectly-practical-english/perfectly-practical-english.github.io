@@ -756,18 +756,28 @@ border-radius:6px;
 }
 #pngToolbar button{
     width:180px;
-    font-size:12px;
+    font-size:10px;
     padding:5px 12px;
     cursor:pointer;
     text-align:left;
     white-space:nowrap;
+
+    background:#9a6ad6;      /* slightly darker purple */
+    color:white;
+    border:none;
+    border-radius:4px;
+
+    overflow:hidden;         /* prevents text spill */
+}
+
+#pngToolbar button:hover{
+    background:#a87be0;      /* subtle hover lift */
 }
 
 #pngToolbar button.selected{
-    background:#4a90e2;
+    background:#7a4bd6;      /* stronger purple highlight */
     color:white;
-}
-/* FULL PAGE OVERLAY */
+}/* FULL PAGE OVERLAY */
 #overlayLayer{
     position:absolute;
     inset:0;
@@ -845,6 +855,16 @@ function setPlaceMode(mode){
 /* ==========================================================
    BUTTONS
 ========================================================== */
+
+const placeholder = document.createElement("div");
+placeholder.textContent = "Select";
+placeholder.style.padding = "6px 10px";
+placeholder.style.color = "#ccc";
+placeholder.style.fontSize = "12px";
+bar.appendChild(placeholder);
+
+
+
 
 /* CLEAR */
 const clear = document.createElement("button");
