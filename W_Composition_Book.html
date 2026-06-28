@@ -748,11 +748,12 @@ style.textContent = `
     overflow-y:auto;
 
     background:#333;
-    border-radius:6px;
+border:8px solid var(--outer);
+border-radius:6px;
+
     z-index:2147483647;
     box-shadow:0 2px 10px rgba(0,0,0,.4);
 }
-
 #pngToolbar button{
     width:180px;
     font-size:12px;
@@ -845,6 +846,13 @@ function setPlaceMode(mode){
    BUTTONS
 ========================================================== */
 
+/* CLEAR */
+const clear = document.createElement("button");
+clear.textContent = "Clear";
+bar.appendChild(clear);
+
+clear.onclick = function(){
+
 PNGS.forEach(item => {
     const b = document.createElement("button");
     b.textContent = item.label;
@@ -860,12 +868,6 @@ PNGS.forEach(item => {
     bar.appendChild(b);
 });
 
-/* CLEAR */
-const clear = document.createElement("button");
-clear.textContent = "Clear";
-bar.appendChild(clear);
-
-clear.onclick = function(){
 
     const selectedTile = document.querySelector(".tile.selectedTile");
 
@@ -958,7 +960,6 @@ function enableDrag(el){
         });
 
         selectedPng = el;
-        el.style.outline = "3px solid #2d7cff";
 
         ev.stopPropagation();
         ev.preventDefault();
