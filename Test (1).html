@@ -253,8 +253,8 @@ const tile = document.createElement("div");
 tile.className = "tile";
 tile.textContent = text;
 
-window.tiles = window.tiles || [];
-window.tiles.push(tile);
+window.leftTiles = window.leftTiles || [];
+window.leftTiles.push(tile);
 
 cell.appendChild(tile);
 sheet.appendChild(cell);
@@ -267,10 +267,8 @@ sheet.appendChild(cell);
 function populateRight(lines) {
 
     const sheet = document.getElementById("right");
-    const existing = [...sheet.querySelectorAll(".tile")];
-const oldTiles = window.tiles ? [...window.tiles] : [];
 sheet.innerHTML = "";
-window.tiles = oldTiles;
+window.rightTiles = [];
 
     let category = "";
 
@@ -297,9 +295,7 @@ window.tiles = oldTiles;
 
         tile.textContent = line;
 
-window.tiles = window.tiles || [];
-window.tiles.push(tile);
-
+window.rightTiles.push(tile);
 cell.appendChild(tile);
 sheet.appendChild(cell);
 
@@ -345,10 +341,9 @@ sheet.innerHTML = "";
         const cell = document.createElement("div");
         cell.className = "cell";
 
-if(window.tiles && window.tiles[r]){
-            cell.appendChild(window.tiles[r]);
+if(window.leftTiles && window.leftTiles[r]){
+            cell.appendChild(window.leftTiles[r]);
         }
-
         sheet.appendChild(cell);
     }
 }
@@ -372,15 +367,15 @@ function buildRight(){
         const cell = document.createElement("div");
         cell.className = "cell";
 
-const tile = window.tiles ? window.tiles[i] : null;
+const tile = window.rightTiles ? window.rightTiles[i] : null;
 
 if(tile){
     cell.appendChild(tile);
 }
-window.tiles = window.tiles || [];
-window.tiles.push(tile);
+if(tile){
+    cell.appendChild(tile);
+}
 
-cell.appendChild(tile);
 sheet.appendChild(cell);
     }
 
