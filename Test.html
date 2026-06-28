@@ -234,10 +234,7 @@ if (line.startsWith("~")) {
         return;
     }
 
-// 🔥 CRITICAL ADDITION (close previous section cleanly)
-if (current && sections[current]) {
-    sections[current] = sections[current].filter(Boolean);
-}
+
 
 // switch section
 current = name;
@@ -248,11 +245,9 @@ return;
 
 if (!current) return;
 
-// extra safety: ignore stray section headers inside content
-if (line.startsWith("~")) return;
-
-// strict ownership push
-sections[current].push(line);
+if (current) {
+    sections[current].push(line);
+}
 
     });
 
