@@ -847,9 +847,36 @@ PNGS.forEach(item => {
 const clear = document.createElement("button");
 clear.textContent = "Clear";
 
-clear.onclick = () => {
-    overlay.innerHTML = "";
-};
+document.addEventListener("keydown", function(e){
+
+    if(editingTile){
+
+        if(e.key === "Escape"){
+            e.preventDefault();
+            finishEdit(false);
+        }
+
+        return;
+    }
+
+    if(e.key === "Delete" || e.key === "Backspace"){
+
+        const selectedTile = document.querySelector(".tile.selectedTile");
+
+        if(selectedTile){
+            e.preventDefault();
+            selectedTile.remove();
+            return;
+        }
+
+        if(selectedPng){
+            e.preventDefault();
+            selectedPng.remove();
+            selectedPng = null;
+        }
+    }
+
+});
 
 bar.appendChild(clear);
 
