@@ -751,21 +751,30 @@ style.textContent = `
 
 #pngToolbar button{
     width:180px;
+
+    height:34px;
+
+    display:flex;
+    align-items:center;
+
+    padding:0 10px;      /* IMPORTANT: no vertical padding */
+    line-height:1;      /* kill font box weirdness */
+
     font-size:12px;
-    padding:10px 6px;
-    line-height:1.1;
-    cursor:pointer;
-    text-align:left;
-    white-space:nowrap;
+
+    box-sizing:border-box;
 
     background:#fff;
     color:#000;
 
     border:2px solid var(--outer);
     border-radius:4px;
-    overflow:hidden;
-}
 
+    cursor:pointer;
+
+    text-align:left;
+    white-space:nowrap;
+}
 #pngToolbar button.selected{
     background:#e6dcff;
     border-color:#7a4bd6;
@@ -816,6 +825,40 @@ const overlay = document.createElement("div");
 overlay.id = "overlayLayer";
 page.appendChild(overlay);
 
+
+function makeDraggable(el, handle = el){
+    let dragging = false;
+    let offsetX = 0;
+    let offsetY = 0;
+
+    handle.addEventListener("pointerdown", (e) => {
+
+        dragging = true;
+
+        const rect = el.getBoundingClientRect();
+
+        offsetX = e.clientX - rect.left;
+        offsetY = e.clientY - rect.top;
+
+        el.style.transform = "none";
+        el.style.left = rect.left + "px";
+        el.style.top = rect.top + "px";
+        el.style.bottom = "auto";
+
+        e.preventDefault();
+    });
+
+    window.addEventListener("pointermove", (e) => {
+        if(!dragging) return;
+
+        el.style.left = (e.clientX - offsetX) + "px";
+        el.style.top  = (e.clientY - offsetY) + "px";
+    });
+
+    window.addEventListener("pointerup", () => {
+        dragging = false;
+    });
+}
 /* ==========================================================
    TOOLBAR
 ========================================================== */
@@ -889,6 +932,8 @@ function buildToolbar(){
 
         bar.appendChild(b);
     });
+
+makeDraggable(bar, bar);
 }
 
 /* ==========================================================
