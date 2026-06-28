@@ -128,16 +128,19 @@ textarea{
 .cell{
   display:flex;
   align-items:center;
-  padding:0 1px;            /* nearly full-width tile */
+  padding:0 1px;
   white-space:nowrap;
   overflow:hidden;
   user-select:none;
   cursor:pointer;
-  border-right:1px solid rgba(0,0,0,.35);
+
+  background:rgba(255,255,255,0.12);
+  border-right:1px solid rgba(0,0,0,0.35);
 }
 
 .cell.selected{
-  background:rgba(90,160,255,.28);
+  background:rgba(255,255,255,0.15);
+
   outline:1px solid rgba(40,100,220,.8);
 }
 
@@ -145,7 +148,9 @@ textarea{
   display:flex;
   align-items:center;
 
-  width:100%;               /* fill cell width */
+   width:calc(100% - 2px);
+  margin:0;
+
   height:calc(100% - 4px);
 
   padding:3px 8px;
@@ -238,8 +243,7 @@ async function loadData() {
 function populateLeft(lines) {
 
     const sheet = document.getElementById("left");
-    
-
+    sheet.innerHTML = "";
 
     lines
         .map(line => line.trim())
@@ -249,28 +253,23 @@ function populateLeft(lines) {
             const cell = document.createElement("div");
             cell.className = "cell";
 
-const tile = document.createElement("div");
-tile.className = "tile";
-tile.textContent = text;
+            const tile = document.createElement("div");
+            tile.className = "tile";
+            tile.textContent = text;
 
-window.tiles = window.tiles || [];
-window.tiles.push(tile);
-
-cell.appendChild(tile);
-sheet.appendChild(cell);
+            cell.appendChild(tile);
+            sheet.appendChild(cell);
 
         });
 
-}</script>
+}
+</script>
 
 <script>
 function populateRight(lines) {
 
     const sheet = document.getElementById("right");
-    const existing = [...sheet.querySelectorAll(".tile")];
-const oldTiles = window.tiles ? [...window.tiles] : [];
-sheet.innerHTML = "";
-window.tiles = oldTiles;
+    sheet.innerHTML = "";
 
     let category = "";
 
@@ -297,391 +296,16 @@ window.tiles = oldTiles;
 
         tile.textContent = line;
 
-window.tiles = window.tiles || [];
-window.tiles.push(tile);
-
-cell.appendChild(tile);
-sheet.appendChild(cell);
-
-    });
-
-}
-</script>
-
-<script>
-window.addEventListener("DOMContentLoaded", async () => {
-    await loadData();
-    buildGrid();
-});</script>
-
-<script>
-(function(){
-
-const LEFT_ROWS = 31;     // notebook rows
-const RIGHT_ROWS = 31;
-const RIGHT_COLS = 6;
-
-window.buildGrid = buildGrid;
-
-function buildGrid(){
-
-    buildLeft();
-    buildRight();
-}
-
-/* ==========================
-   LEFT COLUMN
-========================== */
-
-function buildLeft(){
-
-    const sheet = document.getElementById("left");
-
-// NO DOM SCRAPING — tiles are already in memory
-sheet.innerHTML = "";
-
-    for(let r=0;r<LEFT_ROWS;r++){
-
-        const cell = document.createElement("div");
-        cell.className = "cell";
-
-if(window.tiles && window.tiles[r]){
-            cell.appendChild(window.tiles[r]);
-        }
-
+        cell.appendChild(tile);
         sheet.appendChild(cell);
-    }
-}
-
-/* ==========================
-   RIGHT GRID
-========================== */
-
-function buildRight(){
-
-    const sheet = document.getElementById("right");
-
-    
-
-    sheet.innerHTML = "";
-
-    const totalCells = RIGHT_ROWS * RIGHT_COLS;
-
-    for(let i = 0; i < totalCells; i++){
-
-        const cell = document.createElement("div");
-        cell.className = "cell";
-
-const tile = window.tiles ? window.tiles[i] : null;
-
-if(tile){
-    cell.appendChild(tile);
-}
-window.tiles = window.tiles || [];
-window.tiles.push(tile);
-
-cell.appendChild(tile);
-sheet.appendChild(cell);
-    }
-
-}})();
-</script>
-
-
-<script>
-(async function(){
-
-let selectedTile = null;
-
-/* -----------------------------
-   Helpers
------------------------------ */
-
-function getTile(cell){
-    return cell.querySelector(".tile");
-}
-
-function isEmpty(cell){
-    return !getTile(cell);
-}
-
-function clearSelection(){
-
-    document
-        .querySelectorAll(".tile.selectedTile")
-        .forEach(t => t.classList.remove("selectedTile"));
-
-    selectedTile = null;
-}
-
-function selectTile(tile){
-
-    clearSelection();
-
-    selectedTile = tile;
-
-    tile.classList.add("selectedTile");
-}
-
-function allCells(){
-
-    return document.querySelectorAll(
-        "#left .cell, #right .cell"
-    );
-}
-
-/* -----------------------------
-   Style
------------------------------ */
-
-const style = document.createElement("style");
-
-style.textContent = `
-.tile.selectedTile{
-    outline:3px solid #2d7cff;
-    outline-offset:-2px;
-}
-`;
-
-document.head.appendChild(style);
-
-/* -----------------------------
-   Install handlers
------------------------------ */
-
-function install(){
-
-    allCells().forEach(cell=>{
-
-        if(cell.dataset.tileReady) return;
-
-        cell.dataset.tileReady = "1";
-
-        cell.addEventListener("click",function(e){
-
-            const tile = getTile(cell);
-
-            /* CLICKED A TILE */
-
-            if(tile){
-
-                selectTile(tile);
-
-                e.stopPropagation();
-
-                return;
-            }
-
-            /* CLICKED EMPTY CELL */
-
-            if(selectedTile){
-
-                cell.appendChild(selectedTile);
-
-                clearSelection();
-            }
-
-        });
 
     });
 
 }
-
-/* -----------------------------
-   Observe future tiles
------------------------------ */
-
-const observer = new MutationObserver(install);
-
-observer.observe(document.body,{
-    childList:true,
-    subtree:true
-});
-
-install();
-
-/* -----------------------------
-   Click page = deselect
------------------------------ */
-
-document.addEventListener("click",function(e){
-
-    if(
-        e.target.closest(".tile")==null
-    ){
-        clearSelection();
-    }
-
-});
-
-})();
 </script>
 
 <script>
-(function(){
-
-let editingTile = null;
-let oldText = "";
-
-/* -----------------------------
-   Helpers
------------------------------ */
-
-function allCells(){
-    return document.querySelectorAll(
-        "#left .cell, #right .cell"
-    );
-}
-
-function getTile(cell){
-    return cell.querySelector(".tile");
-}
-
-/* -----------------------------
-   Begin editing
------------------------------ */
-
-function editTile(tile){
-
-    if(editingTile) return;
-
-    editingTile = tile;
-    oldText = tile.textContent;
-
-    tile.contentEditable = true;
-    tile.focus();
-
-    const range = document.createRange();
-    range.selectNodeContents(tile);
-
-    const sel = window.getSelection();
-    sel.removeAllRanges();
-    sel.addRange(range);
-}
-
-/* -----------------------------
-   Finish editing
------------------------------ */
-
-function finishEdit(save){
-
-    if(!editingTile) return;
-
-    if(!save){
-        editingTile.textContent = oldText;
-    }
-
-    if(editingTile.textContent.trim()===""){
-        editingTile.parentNode.removeChild(editingTile);
-    }
-
-    editingTile.contentEditable = false;
-    editingTile = null;
-}
-
-/* -----------------------------
-   Install handlers
------------------------------ */
-
-function install(){
-
-    allCells().forEach(cell=>{
-
-        if(cell.dataset.editReady) return;
-
-        cell.dataset.editReady = "1";
-
-        /* DOUBLE CLICK */
-
-        cell.addEventListener("dblclick",function(e){
-
-            let tile = getTile(cell);
-
-            /* Existing tile */
-
-            if(tile){
-
-                editTile(tile);
-                e.stopPropagation();
-                return;
-            }
-
-            /* Empty cell */
-
-            tile = document.createElement("div");
-            tile.className = "tile";
-            tile.textContent = "";
-
-            cell.appendChild(tile);
-
-            editTile(tile);
-
-        });
-
-    });
-
-}
-
-install();
-
-const observer = new MutationObserver(install);
-
-observer.observe(document.body,{
-    childList:true,
-    subtree:true
-});
-
-/* -----------------------------
-   Blur saves
------------------------------ */
-
-document.addEventListener("focusout",function(){
-
-    if(editingTile){
-        finishEdit(true);
-    }
-
-},true);
-
-/* -----------------------------
-   Keyboard
------------------------------ */
-
-document.addEventListener("keydown",function(e){
-
-    /* Editing */
-
-    if(editingTile){
-
-        if(e.key==="Escape"){
-
-            e.preventDefault();
-            finishEdit(false);
-        }
-
-        return;
-    }
-
-    /* Delete selected tile */
-
-    const selected =
-        document.querySelector(".tile.selectedTile");
-
-    if(!selected) return;
-
-    if(
-        e.key==="Delete" ||
-        e.key==="Backspace"
-    ){
-
-        e.preventDefault();
-
-        selected.remove();
-    }
-
-});
-
-})();
+window.addEventListener("DOMContentLoaded", loadData);
 </script>
 
 </body>
