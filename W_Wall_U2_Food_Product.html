@@ -1030,5 +1030,38 @@ window.addEventListener("DOMContentLoaded",async function(){
 });
 </script>
 
+<script>
+/*==========================================================
+    TEMPORARY: Ignore invalid colour classes
+    Delete this script when using proper parts-of-speech files.
+==========================================================*/
+
+(function () {
+
+    const originalAdd = DOMTokenList.prototype.add;
+
+    DOMTokenList.prototype.add = function (...tokens) {
+
+        const filtered = tokens.filter(token => {
+
+            // Ignore invalid colour classes like
+            // "color-Potato Chips"
+            if (token.startsWith("color-") && /\s/.test(token)) {
+                return false;
+            }
+
+            return true;
+
+        });
+
+        if (filtered.length) {
+            originalAdd.apply(this, filtered);
+        }
+
+    };
+
+})();
+</script>
+
 </body>
 </html>
