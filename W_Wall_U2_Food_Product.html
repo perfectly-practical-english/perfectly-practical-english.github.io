@@ -84,7 +84,7 @@ body{
     display:grid;
 
     grid-template-columns:repeat(10,1fr);
-    grid-template-rows:repeat(20,32px);
+    grid-template-rows:repeat(20,26px);
 
     gap:0px;
 
@@ -141,7 +141,7 @@ body{
 
     font-size:10px;
 
-    line-height:1.45;
+    line-height:1.15;
 
     white-space:pre-wrap;
 
@@ -162,8 +162,8 @@ body{
     justify-content:center;
     align-items:center;
 
-width:calc(98% - 4px);    height:68%;
-
+width:100%;
+height:100%;
     padding:1px 4px;
 
     border:1px solid #666;
@@ -1038,77 +1038,87 @@ window.POSModule = (function () {
 
     const CACHE = {};
 
-// Free Dictionary API (no key required)
-const API_URL = "https://api.dictionaryapi.dev/api/v2/entries/en/";
+    // Free Dictionary API (no key required)
+    const API_URL = "https://api.dictionaryapi.dev/api/v2/entries/en/";
 
     async function classify(word) {
 
-    word = word.toLowerCase().trim();
-    if (!word) return "unknown";
+        word = word.toLowerCase().trim();
+        if (!word) return "unknown";
 
-    if (CACHE[word]) return CACHE[word];
+        if (CACHE[word]) return CACHE[word];
 
-    try {
+        try {
 
-        const res = await fetch(API_URL + encodeURIComponent(word));
+            const res = await fetch(API_URL + encodeURIComponent(word));
 
-        if (!res.ok) throw new Error("API fail");
+            if (!res.ok) throw new Error("API fail");
 
-        const data = await res.json();
+            const data = await res.json();
 
-        const pos = data?.[0]?.meanings?.[0]?.partOfSpeech || "unknown";
+            const pos = data?.[0]?.meanings?.[0]?.partOfSpeech || "unknown";
 
-        CACHE[word] = pos;
+            CACHE[word] = pos;
 
-        return pos;
+            return pos;
 
-    } catch (e) {
+        } catch {
 
-        return "unknown";
+            return "unknown";
+
+        }
 
     }
-
-}
 
     function apply(tile, pos) {
 
         if (!tile) return;
 
-        tile.classList.remove(
-            "color-Nouns",
-            "color-Verbs",
-            "color-Adjectives",
-            "color-Adverbs",
-            "color-Pronouns",
-            "color-Determiners",
-            "color-Prepositions",
-            "color-Conjunctions",
-            "color-Interjections"
-        );
+        switch (pos) {
 
-switch (pos) {
+            case "noun":
+                tile.className = "tile color-Nouns";
+                break;
 
-    case "noun":
-        tile.className = "tile color-Nouns";
-        break;
+            case "verb":
+                tile.className = "tile color-Verbs";
+                break;
 
-    case "verb":
-        tile.className = "tile color-Verbs";
-        break;
+            case "adjective":
+                tile.className = "tile color-Adjectives";
+                break;
 
-    case "adjective":
-        tile.className = "tile color-Adjectives";
-        break;
+            case "adverb":
+                tile.className = "tile color-Adverbs";
+                break;
 
-    case "adverb":
-        tile.className = "tile color-Adverbs";
-        break;
+            case "pronoun":
+                tile.className = "tile color-Pronouns";
+                break;
 
-    default:
-        // DO NOT COLOR UNKNOWN WORDS
-        tile.className = "tile";
-        break;
-}
+            case "determiner":
+            case "article":
+                tile.className = "tile color-Determiners";
+                break;
+
+            case "preposition":
+                tile.className = "tile color-Prepositions";
+                break;
+
+            case "conjunction":
+                tile.className = "tile color-Conjunctions";
+                break;
+
+            case "interjection":
+                tile.className = "tile color-Interjections";
+                break;
+
+            default:
+                tile.className = "tile";
+                break;
+
+        }
+
     }
 
     async function run(tile) {
@@ -1117,15 +1127,32 @@ switch (pos) {
 
         const word = tile.textContent.trim();
 
+        if (!word) {
+            apply(tile, "unknown");
+            return;
+        }
+
         const pos = await classify(word);
 
         apply(tile, pos);
+
     }
+
+async function colorizeAll() {
+
+    const tiles = [...document.querySelectorAll("#wordwall .tile")];
+
+    await Promise.all(
+        tiles.map(tile => run(tile))
+    );
+
+}
 
     return {
         run,
         classify,
         apply,
+        colorizeAll,
         cache: CACHE
     };
 
@@ -1136,6 +1163,10 @@ switch (pos) {
 window.addEventListener("DOMContentLoaded", async function () {
 
     await loadData();
+
+    // Override all colours from the source file.
+    await POSModule.colorizeAll();
+
     installTileHandlers();
 
 });
@@ -1172,6 +1203,7 @@ window.addEventListener("DOMContentLoaded", async function () {
     };
 
 })();
+</script>
 </script>
 
 </body>
