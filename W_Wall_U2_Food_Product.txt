@@ -16,7 +16,8 @@ coated
 potato
 corn
 bag
-vegetable oil
+vegetable
+oil
 salt
 seasoning
 barbecue
@@ -27,7 +28,7 @@ crunch
 munch
 fry
 
-★French fries
+★fries
 crispy
 golden
 salty
@@ -111,13 +112,14 @@ nibble
 drizzle
 fill
 
-★candy bar
+★candy
 
 chocolatey
 chewy
 creamy
 sweet
 gooey
+bar
 wrapper
 chocolate
 caramel
@@ -181,7 +183,7 @@ nuggets
 box
 bucket
 flour
-vegetable oil
+oil
 seasoning
 fry
 bake
