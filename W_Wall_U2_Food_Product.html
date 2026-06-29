@@ -84,7 +84,7 @@ body{
     display:grid;
 
     grid-template-columns:repeat(10,1fr);
-    grid-template-rows:repeat(18,32px);
+    grid-template-rows:repeat(20,32px);
 
     gap:3px;
 
@@ -490,11 +490,8 @@ function loadWords(lines){
             tile.classList.add("color-"+category);
         }
 
-        tile.textContent = line;
-
-POSModule.run(tile);
-
-        WORDS.push(tile);
+tile.textContent = line;
+WORDS.push(tile);
 
     });
 
@@ -647,6 +644,8 @@ editingTile.contentEditable = false;
 POSModule.run(editingTile);
 
 editingTile = null;
+
+}
 /*----------------------------------------------------------
     Install handlers
 ----------------------------------------------------------*/
@@ -1028,70 +1027,102 @@ window.buildToolbar = buildToolbar;
 
 <script>
 
-<script>
 /*==========================================================
     POS MODULE (API + CACHE + SAFE STANDALONE)
 ==========================================================*/
 
-window.POSModule = (function(){
+window.POSModule = (function () {
 
     const CACHE = {};
 
-    // 🔴 CHANGE THIS to your real API
-    const API_URL = "https://your-api.com/pos?word=";
+    // Free open POS API (Datamuse - no key required)
+    const API_URL = "https://api.datamuse.com/words?sp=";
 
-    async function classify(word){
+    async function classify(word) {
 
         word = word.toLowerCase().trim();
-        if(!word) return null;
+        if (!word) return null;
 
-        if(CACHE[word]) return CACHE[word];
+        if (CACHE[word]) return CACHE[word];
 
         try {
 
-            const res = await fetch(API_URL + encodeURIComponent(word));
+            const res = await fetch(API_URL + encodeURIComponent(word) + "&md=p");
 
-            if(!res.ok) throw new Error("API fail");
+            if (!res.ok) throw new Error("API fail");
 
             const data = await res.json();
 
-            CACHE[word] = data.pos;
+            const tags = data?.[0]?.tags || [];
 
-            return data.pos;
+            let pos = "unknown";
 
-        } catch(e){
-            return null;
+            if (tags.includes("n")) pos = "noun";
+            else if (tags.includes("v")) pos = "verb";
+            else if (tags.includes("adj")) pos = "adjective";
+            else if (tags.includes("adv")) pos = "adverb";
+
+            CACHE[word] = pos;
+
+            return pos;
+
+        } catch (e) {
+
+            return "unknown";
+
         }
     }
 
-    function apply(tile, pos){
+    function apply(tile, pos) {
 
-        if(!tile) return;
+        if (!tile) return;
 
         tile.classList.remove(
             "color-Nouns",
             "color-Verbs",
             "color-Adjectives",
             "color-Adverbs",
-            "color-Pronouns"
+            "color-Pronouns",
+            "color-Determiners",
+            "color-Prepositions",
+            "color-Conjunctions",
+            "color-Interjections"
         );
 
-        if(pos === "noun") tile.classList.add("color-Nouns");
-        else if(pos === "verb") tile.classList.add("color-Verbs");
-        else if(pos === "adjective") tile.classList.add("color-Adjectives");
-        else if(pos === "adverb") tile.classList.add("color-Adverbs");
-        else if(pos === "pronoun") tile.classList.add("color-Pronouns");
+switch (pos) {
+
+    case "noun":
+        tile.className = "tile color-Nouns";
+        break;
+
+    case "verb":
+        tile.className = "tile color-Verbs";
+        break;
+
+    case "adjective":
+        tile.className = "tile color-Adjectives";
+        break;
+
+    case "adverb":
+        tile.className = "tile color-Adverbs";
+        break;
+
+    default:
+        // DO NOT COLOR UNKNOWN WORDS
+        tile.className = "tile";
+        break;
+}
     }
 
-    async function run(tile){
+    async function run(tile) {
 
-        if(!tile) return;
+        if (!tile) return;
 
         const word = tile.textContent.trim();
 
         const pos = await classify(word);
 
-        if(pos) apply(tile, pos);
+        apply(tile, pos);
     }
 
     return {
