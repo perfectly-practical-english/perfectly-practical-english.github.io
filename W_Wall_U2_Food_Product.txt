@@ -1,5 +1,11 @@
 ~Left Table
 
+eat
+drink
+fry
+bake
+bite
+
 ★chips
 crunchy
 crispy
@@ -9,44 +15,34 @@ cheesy
 smoky
 spicy
 tangy
-buttery
 roasted
 seasoned
-coated
 potato
 corn
 bag
-vegetable
 oil
 salt
-seasoning
 barbecue
 chili
 onion
-sour cream
+sour
+cream
 crunch
 munch
-fry
 
 ★fries
 crispy
 golden
 salty
-fluffy
 seasoned
 carton
-vegetable oil
+oil
 salt
-seasoning
-fry
-bake
 munch
 dip
-eat
 sprinkle
 
 ★popcorn
-
 crunchy
 buttery
 salty
@@ -56,15 +52,10 @@ bag
 bucket
 salt
 caramel
-seasoning
 pop
 munch
-drizzle
-coat
-eat
 
 ★pretzel
-
 crunchy
 salty
 toasted
@@ -72,11 +63,9 @@ seasoned
 bag
 flour
 salt
-bake
 toast
 crunch
 munch
-eat
 
 ★cracker
 crispy
@@ -86,14 +75,10 @@ seasoned
 box
 flour
 salt
-bake
 crunch
 munch
-eat
-spread
 
 ★cookie
-
 chewy
 crispy
 gooey
@@ -106,14 +91,9 @@ sugar
 chocolate
 vanilla
 caramel
-bake
-bite
 nibble
-drizzle
-fill
 
 ★candy
-
 chocolatey
 chewy
 creamy
@@ -125,55 +105,37 @@ chocolate
 caramel
 sugar
 filling
-bite
 savor
 melt
 fill
-coat
-unwrap
 
 ★pizza
-
 cheesy
 crispy
 gooey
 savory
-loaded
 box
 flour
 topping
-seasoning
-bake
 top
 slice
-eat
-bite
-share
 stuff
 
 ★burger
-
 juicy
 savory
 cheesy
 toasted
-loaded
 wrapper
 onion
-seasoning
 grill
 toast
-bite
-eat
 wrap
-stack
-stuff
 sandwich
 filling
 slice
 
-★chicken 
-
+★chicken
 crispy
 juicy
 golden
@@ -184,15 +146,10 @@ box
 bucket
 flour
 oil
-seasoning
-fry
-bake
 dip
-bite
 munch
 
 ★soda
-
 fizzy
 carbonated
 sweet
@@ -207,12 +164,8 @@ gulp
 open
 pour
 chill
-enjoy
-drink
-bold
 
 ★ice cream
-
 creamy
 rich
 sweet
@@ -227,8 +180,35 @@ caramel
 blend
 sip
 slurp
-drizzle
 stir
+
+★cereal
+crunchy
+crispy
+sweet
+toasted
+honey
+chocolate
+fruity
+cinnamon
+oats
+corn
+wheat
+rice
+flakes
+puffs
+loops
+granola
+bowl
+box
+milk
+sugar
+spoon
+pour
+crunch
+munch
+stir
+
 
 ~Top Right Field
 
