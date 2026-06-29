@@ -86,7 +86,7 @@ body{
     grid-template-columns:repeat(10,1fr);
     grid-template-rows:repeat(20,32px);
 
-    gap:3px;
+    gap:0px;
 
     padding:12px;
 
@@ -1038,43 +1038,37 @@ window.POSModule = (function () {
 
     const CACHE = {};
 
-    // Free open POS API (Datamuse - no key required)
-    const API_URL = "https://api.datamuse.com/words?sp=";
+// Free Dictionary API (no key required)
+const API_URL = "https://api.dictionaryapi.dev/api/v2/entries/en/";
 
     async function classify(word) {
 
-        word = word.toLowerCase().trim();
-        if (!word) return null;
+    word = word.toLowerCase().trim();
+    if (!word) return "unknown";
 
-        if (CACHE[word]) return CACHE[word];
+    if (CACHE[word]) return CACHE[word];
 
-        try {
+    try {
 
-            const res = await fetch(API_URL + encodeURIComponent(word) + "&md=p");
+        const res = await fetch(API_URL + encodeURIComponent(word));
 
-            if (!res.ok) throw new Error("API fail");
+        if (!res.ok) throw new Error("API fail");
 
-            const data = await res.json();
+        const data = await res.json();
 
-            const tags = data?.[0]?.tags || [];
+        const pos = data?.[0]?.meanings?.[0]?.partOfSpeech || "unknown";
 
-            let pos = "unknown";
+        CACHE[word] = pos;
 
-            if (tags.includes("n")) pos = "noun";
-            else if (tags.includes("v")) pos = "verb";
-            else if (tags.includes("adj")) pos = "adjective";
-            else if (tags.includes("adv")) pos = "adverb";
+        return pos;
 
-            CACHE[word] = pos;
+    } catch (e) {
 
-            return pos;
+        return "unknown";
 
-        } catch (e) {
-
-            return "unknown";
-
-        }
     }
+
+}
 
     function apply(tile, pos) {
 
