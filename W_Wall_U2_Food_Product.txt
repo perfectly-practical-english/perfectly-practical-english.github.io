@@ -1,7 +1,5 @@
 ~Left Table
 
-|Unit 2 - Food|
-
 |Potato Chips|
 
 crunchy
