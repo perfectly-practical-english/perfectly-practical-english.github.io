@@ -1,6 +1,6 @@
 ~Left Table
 
-potato chips
+★chips
 crunchy
 crispy
 salty
@@ -13,6 +13,8 @@ buttery
 roasted
 seasoned
 coated
+potato
+corn
 bag
 vegetable oil
 salt
@@ -25,7 +27,7 @@ crunch
 munch
 fry
 
-French fries
+★French fries
 crispy
 golden
 salty
@@ -42,7 +44,7 @@ dip
 eat
 sprinkle
 
-popcorn
+★popcorn
 
 crunchy
 buttery
@@ -60,7 +62,7 @@ drizzle
 coat
 eat
 
-pretzel
+★pretzel
 
 crunchy
 salty
@@ -75,8 +77,7 @@ crunch
 munch
 eat
 
-cracker
-
+★cracker
 crispy
 savory
 toasted
@@ -90,7 +91,7 @@ munch
 eat
 spread
 
-cookie
+★cookie
 
 chewy
 crispy
@@ -110,7 +111,7 @@ nibble
 drizzle
 fill
 
-candy bar
+★candy bar
 
 chocolatey
 chewy
@@ -129,7 +130,7 @@ fill
 coat
 unwrap
 
-pizza
+★pizza
 
 cheesy
 crispy
@@ -148,7 +149,7 @@ bite
 share
 stuff
 
-burger
+★burger
 
 juicy
 savory
@@ -165,33 +166,18 @@ eat
 wrap
 stack
 stuff
-
 sandwich
-
-toasted
-savory
-juicy
-cheesy
-loaded
-wrapper
 filling
-onion
-seasoning
-grill
-toast
-bite
-eat
-wrap
 slice
-stuff
 
-chicken nuggets
+★chicken 
 
 crispy
 juicy
 golden
 seasoned
 savory
+nuggets
 box
 bucket
 flour
@@ -203,7 +189,7 @@ dip
 bite
 munch
 
-soda
+★soda
 
 fizzy
 carbonated
@@ -216,35 +202,21 @@ syrup
 sugar
 sip
 gulp
+open
 pour
 chill
 enjoy
-
-energy drink
-
-fizzy
-carbonated
-refreshing
-bold
-chilled
-can
-bottle
-sugar
-flavoring
-sip
-gulp
-chill
-open
 drink
+bold
 
-milkshake
+★ice cream
 
 creamy
 rich
 sweet
 chocolatey
 frozen
-ice cream
+milkshake
 cup
 chocolate
 vanilla
