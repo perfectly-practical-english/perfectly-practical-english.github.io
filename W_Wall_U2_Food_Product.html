@@ -1050,26 +1050,78 @@ async function classify(word) {
 
     try {
 
-        const res = await fetch(API_URL + encodeURIComponent(word) + "&md=p");
+        // Ask Datamuse for multiple candidate usages
+        const res = await fetch(
+            API_URL + encodeURIComponent(word) + "&md=p"
+        );
+
         const data = await res.json();
 
-        const tags = data?.[0]?.tags || [];
+        if (!Array.isArray(data) || data.length === 0) {
+            CACHE[word] = "unknown";
+            return "unknown";
+        }
 
-        let pos = "unknown";
+        // ---------------------------------------
+        // 1. Aggregate POS frequencies
+        // ---------------------------------------
+        const counts = {
+            noun: 0,
+            verb: 0,
+            adjective: 0,
+            adverb: 0
+        };
 
-        if (tags.includes("v")) pos = "verb";
-        else if (tags.includes("n")) pos = "noun";
-        else if (tags.includes("adj")) pos = "adjective";
-        else if (tags.includes("adv")) pos = "adverb";
+        for (const item of data) {
+
+            const tags = item?.tags || [];
+
+            if (tags.includes("n")) counts.noun++;
+            if (tags.includes("v")) counts.verb++;
+            if (tags.includes("adj")) counts.adjective++;
+            if (tags.includes("adv")) counts.adverb++;
+
+        }
+
+        // ---------------------------------------
+        // 2. Find strongest category
+        // ---------------------------------------
+        let best = "unknown";
+        let bestScore = 0;
+
+        for (const [key, value] of Object.entries(counts)) {
+            if (value > bestScore) {
+                best = key;
+                bestScore = value;
+            }
+        }
+
+        // ---------------------------------------
+        // 3. FLEX RULE (critical improvement)
+        // ---------------------------------------
+        const total = counts.noun + counts.verb + counts.adjective + counts.adverb;
+
+        const sorted = Object.values(counts).sort((a, b) => b - a);
+
+        const top = sorted[0];
+        const second = sorted[1];
+
+        // if ambiguous OR weak dominance → FLEX
+        const isAmbiguous =
+            total === 0 ||
+            top === 0 ||
+            (top - second <= 1);   // close competition
+
+        const pos = isAmbiguous ? "flex" : best;
 
         CACHE[word] = pos;
         return pos;
 
-    } catch {
+    } catch (e) {
+        CACHE[word] = "unknown";
         return "unknown";
     }
-}
-function apply(tile, pos) {
+}function apply(tile, pos) {
 
     if (!tile) return;
 
