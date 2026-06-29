@@ -1039,88 +1039,120 @@ window.POSModule = (function () {
     const CACHE = {};
 
     // Free Dictionary API (no key required)
-    const API_URL = "https://api.dictionaryapi.dev/api/v2/entries/en/";
+const API_URL = "https://api.datamuse.com/words?sp=";
 
-    async function classify(word) {
+async function classify(word) {
 
-        word = word.toLowerCase().trim();
-        if (!word) return "unknown";
+    word = word.toLowerCase().trim();
+    if (!word) return "unknown";
 
-        if (CACHE[word]) return CACHE[word];
+    if (CACHE[word]) return CACHE[word];
 
-        try {
+    try {
 
-            const res = await fetch(API_URL + encodeURIComponent(word));
+        const res = await fetch(API_URL + encodeURIComponent(word) + "&md=p");
+        const data = await res.json();
 
-            if (!res.ok) throw new Error("API fail");
+        const tags = data?.[0]?.tags || [];
 
-            const data = await res.json();
+        let pos = "unknown";
 
-            const pos = data?.[0]?.meanings?.[0]?.partOfSpeech || "unknown";
+        if (tags.includes("v")) pos = "verb";
+        else if (tags.includes("n")) pos = "noun";
+        else if (tags.includes("adj")) pos = "adjective";
+        else if (tags.includes("adv")) pos = "adverb";
 
-            CACHE[word] = pos;
+        CACHE[word] = pos;
+        return pos;
 
-            return pos;
-
-        } catch {
-
-            return "unknown";
-
-        }
-
+    } catch {
+        return "unknown";
     }
+}
+function apply(tile, pos) {
 
-    function apply(tile, pos) {
+    if (!tile) return;
 
-        if (!tile) return;
+    // normalize just in case API returns weird casing
+    pos = (pos || "unknown").toLowerCase().trim();
 
-        switch (pos) {
+    // reset first (prevents stacking issues)
+    tile.className = "tile";
 
-            case "noun":
-                tile.className = "tile color-Nouns";
-                break;
+    switch (pos) {
 
-            case "verb":
-                tile.className = "tile color-Verbs";
-                break;
+        /* =========================
+           CORE PARTS OF SPEECH
+        ========================== */
 
-            case "adjective":
-                tile.className = "tile color-Adjectives";
-                break;
+        case "noun":
+        case "n":
+            tile.classList.add("color-Nouns");
+            break;
 
-            case "adverb":
-                tile.className = "tile color-Adverbs";
-                break;
+        case "verb":
+        case "v":
+            tile.classList.add("color-Verbs");
+            break;
 
-            case "pronoun":
-                tile.className = "tile color-Pronouns";
-                break;
+        case "adjective":
+        case "adj":
+            tile.classList.add("color-Adjectives");
+            break;
 
-            case "determiner":
-            case "article":
-                tile.className = "tile color-Determiners";
-                break;
+        case "adverb":
+        case "adv":
+            tile.classList.add("color-Adverbs");
+            break;
 
-            case "preposition":
-                tile.className = "tile color-Prepositions";
-                break;
+        case "pronoun":
+        case "pro":
+            tile.classList.add("color-Pronouns");
+            break;
 
-            case "conjunction":
-                tile.className = "tile color-Conjunctions";
-                break;
+        case "determiner":
+        case "article":
+        case "det":
+            tile.classList.add("color-Determiners");
+            break;
 
-            case "interjection":
-                tile.className = "tile color-Interjections";
-                break;
+        case "preposition":
+        case "prep":
+            tile.classList.add("color-Prepositions");
+            break;
 
-            default:
-                tile.className = "tile";
-                break;
+        case "conjunction":
+        case "conj":
+            tile.classList.add("color-Conjunctions");
+            break;
 
-        }
+        case "interjection":
+        case "int":
+            tile.classList.add("color-Interjections");
+            break;
 
+        /* =========================
+           NEW: FLEXIBLE / AMBIGUOUS CATEGORY
+           (your “light / fast / round / close” words)
+        ========================== */
+
+        case "flex":
+        case "ambiguous":
+        case "noun-verb-adj":
+        case "nvadj":
+        case "all":
+            tile.classList.add("color-Flex");
+            break;
+
+        /* =========================
+           UNKNOWN
+        ========================== */
+
+        default:
+            // leave neutral white tile
+            break;
     }
-
+}
     async function run(tile) {
 
         if (!tile) return;
