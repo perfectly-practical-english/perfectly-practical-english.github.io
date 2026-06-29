@@ -84,9 +84,9 @@ body{
     display:grid;
 
     grid-template-columns:repeat(10,1fr);
-    grid-template-rows:repeat(10,1fr);
+    grid-template-rows:repeat(20,1fr);
 
-    gap:6px;
+    gap:3px;
 
     padding:12px;
 
@@ -140,7 +140,7 @@ body{
 
     padding:24px;
 
-    font-size:22px;
+    font-size:12px;
 
     line-height:1.45;
 
@@ -163,10 +163,10 @@ body{
     justify-content:center;
     align-items:center;
 
-    width:96%;
-    height:88%;
+    width:98%;
+    height:68%;
 
-    padding:4px 8px;
+    padding:1px 4px;
 
     border:1px solid #666;
     border-radius:8px;
@@ -181,7 +181,7 @@ body{
 
     text-align:center;
 
-    font-size:clamp(12px,1vw,24px);
+    font-size:10pt;
 
 }
 
@@ -450,9 +450,13 @@ async function loadData(){
     document.getElementById("prompt").textContent=
         (sections["Top Right Field"]||[]).join("\n").trim();
 
-    loadImages(sections["Image References"]||[]);
+loadImages(sections["Image References"]||[]);
 
-    buildGrid();
+buildGrid();
+
+if(window.buildToolbar){
+    window.buildToolbar();
+}
 
 }
 
@@ -535,8 +539,10 @@ function buildGrid(){
 
     grid.innerHTML="";
 
-    for(let i=0;i<100;i++){
+const ROWS = 20;
+const COLS = 10;
 
+for(let i=0;i<ROWS*COLS;i++){
         const cell=document.createElement("div");
         cell.className="cell";
 
@@ -1006,10 +1012,13 @@ window.addEventListener("pointerup",function(){
     Init
 ----------------------------------------------------------*/
 
-buildToolbar();
+/*----------------------------------------------------------
+    Init
+----------------------------------------------------------*/
 
-})();
-</script>
+window.buildToolbar = buildToolbar;
+
+})();</script>
 
 <script>
 window.addEventListener("DOMContentLoaded",async function(){
