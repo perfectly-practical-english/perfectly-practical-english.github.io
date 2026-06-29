@@ -490,7 +490,9 @@ function loadWords(lines){
             tile.classList.add("color-"+category);
         }
 
-        tile.textContent=line;
+        tile.textContent = line;
+
+POSModule.run(tile);
 
         WORDS.push(tile);
 
@@ -627,22 +629,24 @@ function editTile(tile){
 
 function finishEdit(save){
 
-    if(!editingTile) return;
+if(!editingTile) return;
 
-    if(!save){
-        editingTile.textContent=oldText;
-    }
-
-    if(editingTile.textContent.trim()===""){
-        editingTile.remove();
-    }
-
-    editingTile.contentEditable=false;
-
-    editingTile=null;
-
+if(!save){
+    editingTile.textContent = oldText;
 }
 
+if(editingTile.textContent.trim()===""){
+    editingTile.remove();
+    editingTile = null;
+    return;
+}
+
+editingTile.contentEditable = false;
+
+/* NEW: re-run POS after edit */
+POSModule.run(editingTile);
+
+editingTile = null;
 /*----------------------------------------------------------
     Install handlers
 ----------------------------------------------------------*/
@@ -693,13 +697,16 @@ function installTileHandlers(){
 
             }
 
-            tile=document.createElement("div");
+tile = document.createElement("div");
 
-            tile.className="tile";
+tile.className = "tile";
 
-            cell.appendChild(tile);
+cell.appendChild(tile);
 
-            editTile(tile);
+editTile(tile);
+
+/* NEW: classify immediately (empty or new word) */
+POSModule.run(tile);
 
         });
 
@@ -1020,6 +1027,84 @@ window.buildToolbar = buildToolbar;
 })();</script>
 
 <script>
+
+<script>
+/*==========================================================
+    POS MODULE (API + CACHE + SAFE STANDALONE)
+==========================================================*/
+
+window.POSModule = (function(){
+
+    const CACHE = {};
+
+    // 🔴 CHANGE THIS to your real API
+    const API_URL = "https://your-api.com/pos?word=";
+
+    async function classify(word){
+
+        word = word.toLowerCase().trim();
+        if(!word) return null;
+
+        if(CACHE[word]) return CACHE[word];
+
+        try {
+
+            const res = await fetch(API_URL + encodeURIComponent(word));
+
+            if(!res.ok) throw new Error("API fail");
+
+            const data = await res.json();
+
+            CACHE[word] = data.pos;
+
+            return data.pos;
+
+        } catch(e){
+            return null;
+        }
+    }
+
+    function apply(tile, pos){
+
+        if(!tile) return;
+
+        tile.classList.remove(
+            "color-Nouns",
+            "color-Verbs",
+            "color-Adjectives",
+            "color-Adverbs",
+            "color-Pronouns"
+        );
+
+        if(pos === "noun") tile.classList.add("color-Nouns");
+        else if(pos === "verb") tile.classList.add("color-Verbs");
+        else if(pos === "adjective") tile.classList.add("color-Adjectives");
+        else if(pos === "adverb") tile.classList.add("color-Adverbs");
+        else if(pos === "pronoun") tile.classList.add("color-Pronouns");
+    }
+
+    async function run(tile){
+
+        if(!tile) return;
+
+        const word = tile.textContent.trim();
+
+        const pos = await classify(word);
+
+        if(pos) apply(tile, pos);
+    }
+
+    return {
+        run,
+        classify,
+        apply,
+        cache: CACHE
+    };
+
+})();
+</script>
+
+
 window.addEventListener("DOMContentLoaded",async function(){
 
     await loadData();
