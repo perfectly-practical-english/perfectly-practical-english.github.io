@@ -424,8 +424,9 @@ let PNGS = [];
 
 async function loadData(){
 
-    const txt = await fetch("W_Wall_U2_Food_Product.txt")
-        .then(r=>r.text());
+const res = await fetch("./W_Wall_U2_Food_Product.txt");
+if (!res.ok) throw new Error("TXT load failed: " + res.status);
+const txt = await res.text();
 
     const sections={};
     let current="";
@@ -444,12 +445,12 @@ async function loadData(){
 
     });
 
-    loadWords(sections["Left Table"]||[]);
+    loadWords(sections["Left Table"] || sections["left table"] || []);
 
-    document.getElementById("prompt").textContent=
-        (sections["Top Right Field"]||[]).join("\n").trim();
+document.getElementById("prompt").textContent =
+    (sections["Top Right Field"] || sections["top right field"] || []).join("\n").trim();
 
-loadImages(sections["Image References"]||[]);
+loadImages(sections["Image References"] || sections["image references"] || []);
 
 buildGrid();
 
@@ -544,9 +545,10 @@ for(let i=0;i<ROWS*COLS;i++){
         const cell=document.createElement("div");
         cell.className="cell";
 
-        if(WORDS[i]){
-            cell.appendChild(WORDS[i]);
-        }
+if(WORDS[i]){
+    if (WORDS[i].parentNode) WORDS[i].parentNode.removeChild(WORDS[i]);
+    cell.appendChild(WORDS[i]);
+}
 
         grid.appendChild(cell);
 
@@ -654,7 +656,7 @@ function installTileHandlers(){
 
     allCells().forEach(cell=>{
 
-        if(cell.dataset.ready) return;
+        if(cell.dataset.ready === "1") return;
 
         cell.dataset.ready="1";
 
@@ -718,11 +720,12 @@ POSModule.run(tile);
 ----------------------------------------------------------*/
 
 const observer=new MutationObserver(function(){
-
+    if (!window._tilesInstalled) {
     installTileHandlers();
-
+    window._tilesInstalled = true;
+}
+    observer.disconnect();
 });
-
 observer.observe(document.body,{
 
     childList:true,
