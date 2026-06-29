@@ -1,7 +1,6 @@
 ~Left Table
 
-|Potato Chips|
-
+potato chips
 crunchy
 crispy
 salty
@@ -10,494 +9,252 @@ cheesy
 smoky
 spicy
 tangy
-zesty
 buttery
 roasted
-toasted
-addictive
-tasty
-delicious
-flavorful
-irresistible
-satisfying
-mouthwatering
-golden
-baked to perfection
-coated
 seasoned
-loaded with
-topped with
-chip bag
+coated
 bag
-package
-packet
-box
-chips
 vegetable oil
 salt
 seasoning
 barbecue
 chili
 onion
-sour-cream
-artificial flavoring
-eat
-bite
-chew
-munch
+sour cream
 crunch
-snack
-taste
-savor
-devour
-gobble
-nibble
-enjoy
-crave
-finish
+munch
 fry
-deep-fry
-bake
-roast
-season
-flavor
-coat
-sprinkle
-crisp
 
-|French Fries|
-
+French fries
 crispy
-crunchy
 golden
 salty
-greasy
 fluffy
-buttery
-loaded with
-topped with
 seasoned
-baked to perfection
-cup
 carton
-bucket
-box
-fries
 vegetable oil
 salt
 seasoning
-chili
-eat
-bite
-chew
-munch
-savor
-devour
-gobble
-enjoy
-finish
 fry
-deep-fry
 bake
-season
-coat
+munch
+dip
+eat
 sprinkle
 
-|Popcorn|
+popcorn
 
 crunchy
-crispy
 buttery
 salty
 sweet
 cheesy
-flavorful
-addictive
-satisfying
 bag
 bucket
-box
-popcorn
 salt
-sugar
 caramel
 seasoning
-munch
-crunch
-snack
-eat
-nibble
-savor
 pop
-season
-coat
+munch
 drizzle
-melt
+coat
+eat
 
-|Pretzels|
-
-crunchy
-crispy
-salty
-savory
-toasted
-baked to perfection
-seasoned
-box
-packet
-package
 pretzel
-flour
-salt
-seasoning
-eat
-bite
-chew
-crunch
-munch
-nibble
-snack
-bake
-toast
-season
-coat
-
-|Crackers|
 
 crunchy
-crispy
 salty
-savory
 toasted
-baked to perfection
 seasoned
-box
-packet
-package
-cracker
+bag
 flour
 salt
-seasoning
-eat
-bite
-chew
-crunch
-munch
-nibble
-snack
 bake
 toast
-season
-coat
+crunch
+munch
+eat
 
-|Cookies|
+cracker
+
+crispy
+savory
+toasted
+seasoned
+box
+flour
+salt
+bake
+crunch
+munch
+eat
+spread
+
+cookie
 
 chewy
 crispy
-crunchy
 gooey
 chocolatey
 sweet
-sugary
-rich
 buttery
-delicious
-mouthwatering
-stuffed with
-filled with
-drizzled with
-box
 package
-plastic wrapper
-cookie
 flour
 sugar
 chocolate
 vanilla
 caramel
-filling
-eat
-bite
-chew
-nibble
-savor
-devour
-enjoy
 bake
-mix
-blend
-stir
-combine
-fill
-stuff
+bite
+nibble
 drizzle
-glaze
+fill
 
-|Candy Bars|
+candy bar
 
 chocolatey
 chewy
 creamy
-sticky
 sweet
-rich
 gooey
-melted
-irresistible
-satisfying
-filled with
-stuffed with
-coated
-candy bar
-plastic wrapper
-box
+wrapper
 chocolate
 caramel
-vanilla
 sugar
 filling
 bite
-chew
-lick
 savor
-devour
-indulge
-enjoy
-treat
-melts in your mouth
-coat
-fill
-stuff
-drizzle
 melt
-wrap
-seal
+fill
+coat
+unwrap
 
-|Pizza|
+pizza
 
 cheesy
 crispy
 gooey
-melted
 savory
-flavorful
-loaded with
-topped with
-stuffed with
-baked to perfection
+loaded
 box
-pizza
 flour
 topping
 seasoning
-eat
-bite
-chew
-savor
-devour
-enjoy
 bake
 top
-load
-season
-fill
+slice
+eat
+bite
+share
 stuff
 
-|Burgers|
-
-juicy
-savory
-cheesy
-loaded with
-topped with
-stuffed with
-toasted
-flavorful
-wrapper
-box
-package
 burger
-onion
-seasoning
-filling
-eat
-bite
-chew
-devour
-gobble
-savor
-enjoy
-grill
-toast
-fill
-stuff
-season
-wrap
-
-|Sandwiches|
 
 juicy
 savory
 cheesy
-loaded with
-topped with
-stuffed with
 toasted
-flavorful
+loaded
 wrapper
-box
-package
-sandwich
 onion
 seasoning
-filling
-eat
-bite
-chew
-devour
-gobble
-savor
-enjoy
 grill
 toast
-fill
-stuff
-season
+bite
+eat
 wrap
+stack
+stuff
 
-|Chicken Nuggets|
+sandwich
+
+toasted
+savory
+juicy
+cheesy
+loaded
+wrapper
+filling
+onion
+seasoning
+grill
+toast
+bite
+eat
+wrap
+slice
+stuff
+
+chicken nuggets
 
 crispy
-crunchy
 juicy
 golden
 seasoned
 savory
 box
 bucket
-carton
-nuggets
-seasoning
 flour
 vegetable oil
-bite
-chew
-munch
-devour
-enjoy
+seasoning
 fry
-deep-fry
 bake
-season
-coat
+dip
+bite
+munch
 
-|Soda|
-
-fizzy
-carbonated
-sweet
-sugary
-refreshing
-chilled
-can
-bottle
-six-pack
 soda
-syrup
-sugar
-artificial flavoring
-sip
-gulp
-guzzle
-taste
-enjoy
-finish
-mix
-blend
-flavor
-sweeten
-
-|Soft Drinks|
 
 fizzy
 carbonated
 sweet
-sugary
 refreshing
 chilled
 can
 bottle
-six-pack
-soft drink
 syrup
 sugar
-artificial flavoring
 sip
 gulp
-guzzle
-taste
+pour
+chill
 enjoy
-finish
-mix
-blend
-flavor
-sweeten
 
-|Energy Drinks|
+energy drink
 
 fizzy
 carbonated
-sweet
 refreshing
 bold
 chilled
 can
 bottle
-six-pack
-energy drink
-syrup
 sugar
-artificial flavoring
+flavoring
 sip
 gulp
-guzzle
-taste
-enjoy
-finish
-mix
-blend
-flavor
-sweeten
+chill
+open
+drink
 
-|Milkshakes|
+milkshake
 
 creamy
 rich
 sweet
 chocolatey
-chilled
 frozen
-refreshing
+ice cream
 cup
-milkshake
 chocolate
 vanilla
 syrup
 caramel
-sugar
+blend
 sip
 slurp
-gulp
-taste
-savor
-enjoy
-blend
-mix
-stir
-combine
-sweeten
 drizzle
-
+stir
 
 ~Top Right Field
 
