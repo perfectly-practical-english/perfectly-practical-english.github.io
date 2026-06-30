@@ -476,46 +476,88 @@ if(window.buildToolbar){
 
 function loadWords(lines){
 
-    WORDS=[];
+    WORDS = [];
 
-    let category="";
+    lines.forEach(line => {
 
-    lines.forEach(line=>{
+        line = line.trim();
 
-        line=line.trim();
+        if (!line) return;
 
-        if(!line) return;
+        // Ignore old category headers
+        if (line.startsWith("|") && line.endsWith("|")) return;
 
-        if(line.startsWith("|") && line.endsWith("|")){
+        const tile = document.createElement("div");
+        tile.className = "tile";
 
-            category=line.slice(1,-1);
+        const isStar = line.startsWith("★") || line.startsWith("*");
 
-            return;
+        const clean = isStar
+            ? line.replace(/^[★*]\s*/, "")
+            : line;
+
+        // Parse:
+        // word - noun
+        const parts = clean.split(/\s+-\s+/);
+
+        const word = parts[0].trim();
+        const pos = (parts[1] || "").toLowerCase();
+
+        tile.textContent = word;
+        tile.dataset.pos = pos;
+
+        if (isStar) {
+            tile.classList.add("star-tile");
         }
 
-const tile=document.createElement("div");
+        switch (pos) {
 
-tile.className="tile";
+            case "noun":
+                tile.classList.add("color-Nouns");
+                break;
 
-const isStar = line.startsWith("*");
+            case "verb":
+                tile.classList.add("color-Verbs");
+                break;
 
-// strip star
-const clean = isStar ? line.replace(/^\*\s*/, "") : line;
+            case "adjective":
+                tile.classList.add("color-Adjectives");
+                break;
 
-tile.textContent = clean;
+            case "adverb":
+                tile.classList.add("color-Adverbs");
+                break;
 
-// STAR = force white tile only
-if (isStar) {
-    tile.classList.add("star-tile");
-} else if (category) {
-    tile.classList.add("color-" + category);
-}
+            case "pronoun":
+                tile.classList.add("color-Pronouns");
+                break;
 
-WORDS.push(tile);
+            case "determiner":
+                tile.classList.add("color-Determiners");
+                break;
+
+            case "preposition":
+                tile.classList.add("color-Prepositions");
+                break;
+
+            case "conjunction":
+                tile.classList.add("color-Conjunctions");
+                break;
+
+            case "interjection":
+                tile.classList.add("color-Interjections");
+                break;
+
+            default:
+                tile.classList.add("color-Flex");
+                break;
+        }
+
+        WORDS.push(tile);
+
     });
 
 }
-
 /*==========================================================
     IMAGES
 ==========================================================*/
@@ -660,13 +702,7 @@ if(editingTile.textContent.trim()===""){
 
 editingTile.contentEditable = false;
 
-/* NEW: re-run POS after edit */
-POSModule.run(editingTile);
-
-editingTile = null;
-
-}
-/*----------------------------------------------------------
+editingTile = null;/*----------------------------------------------------------
     Install handlers
 ----------------------------------------------------------*/
 
@@ -717,31 +753,11 @@ function installTileHandlers(){
             }
 
 tile = document.createElement("div");
-
-// keep star-tile if it exists, remove only color classes
-tile.classList.remove(
-    "color-Nouns",
-    "color-Verbs",
-    "color-Adjectives",
-    "color-Adverbs",
-    "color-Pronouns",
-    "color-Determiners",
-    "color-Prepositions",
-    "color-Conjunctions",
-    "color-Interjections",
-    "color-Flex"
-);
-
-// STAR OVERRIDE: never color these
-if (tile.classList.contains("star-tile")) return;
+tile.className = "tile";
 
 cell.appendChild(tile);
 
 editTile(tile);
-
-/* NEW: classify immediately (empty or new word) */
-POSModule.run(tile);
-
         });
 
     });
