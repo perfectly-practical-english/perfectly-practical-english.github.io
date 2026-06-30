@@ -1,226 +1,214 @@
 ~Left Table
 
-eat - verb
-drink - verb
-fry - verb
-bake - verb
-bite - verb
+eat
+drink
+fry
+bake
+bite
 
 ★chips
-chips - noun
-crunchy - adjective
-crispy - adjective
-salty - adjective
-savory - adjective
-cheesy - adjective
-smoky - adjective
-spicy - adjective
-tangy - adjective
-roasted - adjective
-seasoned - adjective
-potato - noun
-corn - noun
-bag - noun
-oil - noun
-salt - noun
-barbecue - noun
-chili - noun
-onion - noun
-sour - adjective
-cream - noun
-crunch - verb
-munch - verb
+crunchy
+crispy
+salty
+savory
+cheesy
+smoky
+spicy
+tangy
+roasted
+seasoned
+potato
+corn
+bag
+oil
+salt
+barbecue
+chili
+onion
+sour
+cream
+crunch
+munch
 
 ★fries
-fries - noun
-crispy - adjective
-golden - adjective
-salty - adjective
-seasoned - adjective
-carton - noun
-oil - noun
-salt - noun
-munch - verb
-dip - verb
-sprinkle - verb
+crispy
+golden
+salty
+seasoned
+carton
+oil
+salt
+munch
+dip
+sprinkle
 
 ★popcorn
-popcorn - noun
-crunchy - adjective
-buttery - adjective
-salty - adjective
-sweet - adjective
-cheesy - adjective
-bag - noun
-bucket - noun
-salt - noun
-caramel - noun
-pop - verb
-munch - verb
+crunchy
+buttery
+salty
+sweet
+cheesy
+bag
+bucket
+salt
+caramel
+pop
+munch
 
 ★pretzel
-pretzel - noun
-crunchy - adjective
-salty - adjective
-toasted - adjective
-seasoned - adjective
-bag - noun
-flour - noun
-salt - noun
-toast - verb
-crunch - verb
-munch - verb
+crunchy
+salty
+toasted
+seasoned
+bag
+flour
+salt
+toast
+crunch
+munch
 
 ★cracker
-cracker - noun
-crispy - adjective
-savory - adjective
-toasted - adjective
-seasoned - adjective
-box - noun
-flour - noun
-salt - noun
-crunch - verb
-munch - verb
+crispy
+savory
+toasted
+seasoned
+box
+flour
+salt
+crunch
+munch
 
 ★cookie
-cookie - noun
-chewy - adjective
-crispy - adjective
-gooey - adjective
-chocolatey - adjective
-sweet - adjective
-buttery - adjective
-package - noun
-flour - noun
-sugar - noun
-chocolate - noun
-vanilla - noun
-caramel - noun
-nibble - verb
+chewy
+crispy
+gooey
+chocolatey
+sweet
+buttery
+package
+flour
+sugar
+chocolate
+vanilla
+caramel
+nibble
 
 ★candy
-candy - noun
-chocolatey - adjective
-chewy - adjective
-creamy - adjective
-sweet - adjective
-gooey - adjective
-bar - noun
-wrapper - noun
-chocolate - noun
-caramel - noun
-sugar - noun
-filling - noun
-savor - verb
-melt - verb
-fill - verb
+chocolatey
+chewy
+creamy
+sweet
+gooey
+bar
+wrapper
+chocolate
+caramel
+sugar
+filling
+savor
+melt
+fill
 
 ★pizza
-pizza - noun
-cheesy - adjective
-crispy - adjective
-gooey - adjective
-savory - adjective
-box - noun
-flour - noun
-topping - noun
-top - verb
-slice - noun
-stuff - verb
+cheesy
+crispy
+gooey
+savory
+box
+flour
+topping
+top
+slice
+stuff
 
 ★burger
-burger - noun
-juicy - adjective
-savory - adjective
-cheesy - adjective
-toasted - adjective
-wrapper - noun
-onion - noun
-grill - verb
-toast - verb
-wrap - verb
-sandwich - noun
-filling - noun
-slice - noun
+juicy
+savory
+cheesy
+toasted
+wrapper
+onion
+grill
+toast
+wrap
+sandwich
+filling
+slice
 
 ★chicken
-chicken - noun
-crispy - adjective
-juicy - adjective
-golden - adjective
-seasoned - adjective
-savory - adjective
-nuggets - noun
-box - noun
-bucket - noun
-flour - noun
-oil - noun
-dip - verb
-munch - verb
+crispy
+juicy
+golden
+seasoned
+savory
+nuggets
+box
+bucket
+flour
+oil
+dip
+munch
 
 ★soda
-soda - noun
-fizzy - adjective
-carbonated - adjective
-sweet - adjective
-refreshing - adjective
-chilled - adjective
-can - noun
-bottle - noun
-syrup - noun
-sugar - noun
-sip - verb
-gulp - verb
-open - verb
-pour - verb
-chill - verb
+fizzy
+carbonated
+sweet
+refreshing
+chilled
+can
+bottle
+syrup
+sugar
+sip
+gulp
+open
+pour
+chill
 
 ★ice cream
-ice cream - noun
-creamy - adjective
-rich - adjective
-sweet - adjective
-chocolatey - adjective
-frozen - adjective
-milkshake - noun
-cup - noun
-chocolate - noun
-vanilla - noun
-syrup - noun
-caramel - noun
-blend - verb
-sip - verb
-slurp - verb
-stir - verb
+creamy
+rich
+sweet
+chocolatey
+frozen
+milkshake
+cup
+chocolate
+vanilla
+syrup
+caramel
+blend
+sip
+slurp
+stir
 
 ★cereal
-cereal - noun
-crunchy - adjective
-crispy - adjective
-sweet - adjective
-toasted - adjective
-honey - noun
-chocolate - noun
-fruity - adjective
-cinnamon - noun
-oats - noun
-corn - noun
-wheat - noun
-rice - noun
-flakes - noun
-puffs - noun
-loops - noun
-granola - noun
-bowl - noun
-box - noun
-milk - noun
-sugar - noun
-spoon - noun
-pour - verb
-crunch - verb
-munch - verb
-stir - verb
+crunchy
+crispy
+sweet
+toasted
+honey
+chocolate
+fruity
+cinnamon
+oats
+corn
+wheat
+rice
+flakes
+puffs
+loops
+granola
+bowl
+box
+milk
+sugar
+spoon
+pour
+crunch
+munch
+stir
+
 
 ~Top Right Field
 

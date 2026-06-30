@@ -84,9 +84,9 @@ body{
     display:grid;
 
     grid-template-columns:repeat(10,1fr);
-    grid-template-rows:repeat(18,32px);
+    grid-template-rows:repeat(20,26px);
 
-    gap:3px;
+    gap:0px;
 
     padding:12px;
 
@@ -141,7 +141,7 @@ body{
 
     font-size:10px;
 
-    line-height:1.45;
+    line-height:1.15;
 
     white-space:pre-wrap;
 
@@ -162,8 +162,8 @@ body{
     justify-content:center;
     align-items:center;
 
-width:calc(98% - 4px);    height:68%;
-
+width:100%;
+height:100%;
     padding:1px 4px;
 
     border:1px solid #666;
@@ -375,6 +375,11 @@ width:calc(98% - 4px);    height:68%;
 
 }
 
+
+.star-tile{
+    background:white !important;
+}
+
 </style>
 </head>
 
@@ -424,8 +429,9 @@ let PNGS = [];
 
 async function loadData(){
 
-    const txt = await fetch("W_Wall_U2_Food_Product.txt")
-        .then(r=>r.text());
+const res = await fetch("./W_Wall_U2_Food_Product.txt");
+if (!res.ok) throw new Error("TXT load failed: " + res.status);
+const txt = await res.text();
 
     const sections={};
     let current="";
@@ -444,12 +450,12 @@ async function loadData(){
 
     });
 
-    loadWords(sections["Left Table"]||[]);
+    loadWords(sections["Left Table"] || sections["left table"] || []);
 
-    document.getElementById("prompt").textContent=
-        (sections["Top Right Field"]||[]).join("\n").trim();
+document.getElementById("prompt").textContent =
+    (sections["Top Right Field"] || sections["top right field"] || []).join("\n").trim();
 
-loadImages(sections["Image References"]||[]);
+loadImages(sections["Image References"] || sections["image references"] || []);
 
 buildGrid();
 
@@ -465,35 +471,40 @@ if(window.buildToolbar){
 
 function loadWords(lines){
 
-    WORDS = [];
+    WORDS=[];
 
-    lines.forEach(line => {
+    let category="";
 
-        line = line.trim();
+    lines.forEach(line=>{
+
+        line=line.trim();
 
         if(!line) return;
 
-        if(line.startsWith("★")) return;
+        if(line.startsWith("|") && line.endsWith("|")){
 
-        const parts = line.split("-").map(s => s.trim());
+            category=line.slice(1,-1);
 
-        if(parts.length < 2) return;
+            return;
+        }
 
-        const word = parts[0];
-        const pos = parts[1].toLowerCase();
+        const tile=document.createElement("div");
 
-        const tile = document.createElement("div");
+        tile.className="tile";
 
-        tile.className = "tile";
+        if(category){
+            tile.classList.add("color-"+category);
+        }
 
-        tile.textContent = word;
+const isStar = line.startsWith("*");
 
-        if(pos === "noun") tile.classList.add("color-Nouns");
-        else if(pos === "verb") tile.classList.add("color-Verbs");
-        else if(pos === "adjective") tile.classList.add("color-Adjectives");
+tile.textContent = isStar ? line.replace(/^\*\s*/, "") : line;
 
-        WORDS.push(tile);
+if (isStar) {
+    tile.classList.add("star-tile");
+}
 
+WORDS.push(tile);
     });
 
 }
@@ -545,9 +556,10 @@ for(let i=0;i<ROWS*COLS;i++){
         const cell=document.createElement("div");
         cell.className="cell";
 
-        if(WORDS[i]){
-            cell.appendChild(WORDS[i]);
-        }
+if(WORDS[i]){
+    if (WORDS[i].parentNode) WORDS[i].parentNode.removeChild(WORDS[i]);
+    cell.appendChild(WORDS[i]);
+}
 
         grid.appendChild(cell);
 
@@ -627,22 +639,26 @@ function editTile(tile){
 
 function finishEdit(save){
 
-    if(!editingTile) return;
+if(!editingTile) return;
 
-    if(!save){
-        editingTile.textContent=oldText;
-    }
-
-    if(editingTile.textContent.trim()===""){
-        editingTile.remove();
-    }
-
-    editingTile.contentEditable=false;
-
-    editingTile=null;
-
+if(!save){
+    editingTile.textContent = oldText;
 }
 
+if(editingTile.textContent.trim()===""){
+    editingTile.remove();
+    editingTile = null;
+    return;
+}
+
+editingTile.contentEditable = false;
+
+/* NEW: re-run POS after edit */
+POSModule.run(editingTile);
+
+editingTile = null;
+
+}
 /*----------------------------------------------------------
     Install handlers
 ----------------------------------------------------------*/
@@ -651,7 +667,7 @@ function installTileHandlers(){
 
     allCells().forEach(cell=>{
 
-        if(cell.dataset.ready) return;
+        if(cell.dataset.ready === "1") return;
 
         cell.dataset.ready="1";
 
@@ -693,13 +709,19 @@ function installTileHandlers(){
 
             }
 
-            tile=document.createElement("div");
+tile = document.createElement("div");
 
-            tile.className="tile";
+tile.className = "tile";
 
-            cell.appendChild(tile);
+// STAR OVERRIDE: never color these
+if (tile.classList.contains("star-tile")) return;
 
-            editTile(tile);
+cell.appendChild(tile);
+
+editTile(tile);
+
+/* NEW: classify immediately (empty or new word) */
+POSModule.run(tile);
 
         });
 
@@ -712,11 +734,12 @@ function installTileHandlers(){
 ----------------------------------------------------------*/
 
 const observer=new MutationObserver(function(){
-
+    if (!window._tilesInstalled) {
     installTileHandlers();
-
+    window._tilesInstalled = true;
+}
+    observer.disconnect();
 });
-
 observer.observe(document.body,{
 
     childList:true,
@@ -1020,9 +1043,233 @@ window.buildToolbar = buildToolbar;
 })();</script>
 
 <script>
-window.addEventListener("DOMContentLoaded",async function(){
+
+/*==========================================================
+    POS MODULE (API + CACHE + SAFE STANDALONE)
+==========================================================*/
+
+window.POSModule = (function () {
+
+    const CACHE = {};
+
+    // Free Dictionary API (no key required)
+const API_URL = "https://api.datamuse.com/words?sp=";
+
+async function classify(word) {
+
+    word = word.toLowerCase().trim();
+    if (!word) return "unknown";
+
+    if (CACHE[word]) return CACHE[word];
+
+    try {
+
+        // Wordnik API (statistical POS + usage senses)
+        // NOTE: requires API key in real use:
+        // https://api.wordnik.com/v4/word.json/{word}/definitions
+        const url =
+            "https://api.wordnik.com/v4/word.json/" +
+            encodeURIComponent(word) +
+            "/definitions?limit=50&includeRelated=false&sourceDictionaries=all&useCanonical=true&includeTags=true&api_key=YOUR_KEY";
+
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if (!Array.isArray(data) || data.length === 0) {
+            CACHE[word] = "unknown";
+            return "unknown";
+        }
+
+        // ---------------------------------------
+        // COUNT DOMINANT USAGE TYPES
+        // ---------------------------------------
+        const counts = {
+            noun: 0,
+            verb: 0,
+            adjective: 0,
+            adverb: 0
+        };
+
+        for (const def of data) {
+
+            const partOfSpeech = (def.partOfSpeech || "").toLowerCase();
+
+            if (partOfSpeech.includes("noun")) counts.noun++;
+            else if (partOfSpeech.includes("verb")) counts.verb++;
+            else if (partOfSpeech.includes("adjective")) counts.adjective++;
+            else if (partOfSpeech.includes("adverb")) counts.adverb++;
+
+        }
+
+        // ---------------------------------------
+        // FIND DOMINANT USAGE (STATISTICAL)
+        // ---------------------------------------
+        let best = "unknown";
+        let bestScore = 0;
+
+        for (const [k, v] of Object.entries(counts)) {
+            if (v > bestScore) {
+                best = k;
+                bestScore = v;
+            }
+        }
+
+        const total =
+            counts.noun + counts.verb + counts.adjective + counts.adverb;
+
+        const sorted = Object.values(counts).sort((a, b) => b - a);
+        const top = sorted[0] || 0;
+        const second = sorted[1] || 0;
+
+        // ---------------------------------------
+        // FLEX LOGIC (important for words like light/fast/round)
+        // ---------------------------------------
+        const isAmbiguous =
+            total === 0 ||
+            top === 0 ||
+            (top / Math.max(1, total) < 0.6) ||  // weak dominance
+            (top - second <= 1);                 // close split
+
+        const pos = isAmbiguous ? "flex" : best;
+
+        CACHE[word] = pos;
+        return pos;
+
+    } catch (e) {
+        CACHE[word] = "unknown";
+        return "unknown";
+    }
+}
+
+function apply(tile, pos) {
+
+    if (!tile) return;
+
+    // normalize just in case API returns weird casing
+    pos = (pos || "unknown").toLowerCase().trim();
+
+    // reset first (prevents stacking issues)
+    tile.className = "tile";
+
+    switch (pos) {
+
+        /* =========================
+           CORE PARTS OF SPEECH
+        ========================== */
+
+        case "noun":
+        case "n":
+            tile.classList.add("color-Nouns");
+            break;
+
+        case "verb":
+        case "v":
+            tile.classList.add("color-Verbs");
+            break;
+
+        case "adjective":
+        case "adj":
+            tile.classList.add("color-Adjectives");
+            break;
+
+        case "adverb":
+        case "adv":
+            tile.classList.add("color-Adverbs");
+            break;
+
+        case "pronoun":
+        case "pro":
+            tile.classList.add("color-Pronouns");
+            break;
+
+        case "determiner":
+        case "article":
+        case "det":
+            tile.classList.add("color-Determiners");
+            break;
+
+        case "preposition":
+        case "prep":
+            tile.classList.add("color-Prepositions");
+            break;
+
+        case "conjunction":
+        case "conj":
+            tile.classList.add("color-Conjunctions");
+            break;
+
+        case "interjection":
+        case "int":
+            tile.classList.add("color-Interjections");
+            break;
+
+        /* =========================
+           NEW: FLEXIBLE / AMBIGUOUS CATEGORY
+           (your “light / fast / round / close” words)
+        ========================== */
+
+        case "flex":
+        case "ambiguous":
+        case "noun-verb-adj":
+        case "nvadj":
+        case "all":
+            tile.classList.add("color-Flex");
+            break;
+
+        /* =========================
+           UNKNOWN
+        ========================== */
+
+        default:
+            // leave neutral white tile
+            break;
+    }
+}
+    async function run(tile) {
+
+        if (!tile) return;
+
+        const word = tile.textContent.trim();
+
+        if (!word) {
+            apply(tile, "unknown");
+            return;
+        }
+
+        const pos = await classify(word);
+
+        apply(tile, pos);
+
+    }
+
+async function colorizeAll() {
+
+    const tiles = [...document.querySelectorAll("#wordwall .tile")];
+
+    await Promise.all(
+        tiles.map(tile => run(tile))
+    );
+
+}
+
+    return {
+        run,
+        classify,
+        apply,
+        colorizeAll,
+        cache: CACHE
+    };
+
+})();
+</script>
+
+<script>
+window.addEventListener("DOMContentLoaded", async function () {
 
     await loadData();
+
+    // Override all colours from the source file.
+    await POSModule.colorizeAll();
 
     installTileHandlers();
 
