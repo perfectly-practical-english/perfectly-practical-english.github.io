@@ -71,29 +71,30 @@ body{
 
     border-right:4px solid #888;
 
-    overflow:hidden;
+    overflow-y:auto;
+    overflow-x:hidden;
+
+    min-height:0;
 
 }
 
-/* 10 × 10 */
+/* WORD WALL */
 
 #wordwall{
 
-    flex:1;
-
     display:grid;
 
-grid-template-columns: repeat(10, 1fr);
-grid-template-rows: repeat(30, 26px);
+    grid-template-columns:repeat(10,1fr);
+    grid-auto-rows:26px;
 
-    gap:0px;
+    gap:0;
 
     padding:12px;
 
     width:100%;
-    height:calc(100% - 80px);
 
 }
+
 /* ==========================================================
    GRID CELLS
 ========================================================== */
