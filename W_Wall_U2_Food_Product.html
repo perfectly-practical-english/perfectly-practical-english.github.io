@@ -381,6 +381,10 @@ height:100%;
     border:1px solid #666;
 }
 
+.color-Flex{
+    background:#e8e8e8;
+}
+
 </style>
 </head>
 
@@ -714,7 +718,19 @@ function installTileHandlers(){
 
 tile = document.createElement("div");
 
-tile.className = "tile";
+// keep star-tile if it exists, remove only color classes
+tile.classList.remove(
+    "color-Nouns",
+    "color-Verbs",
+    "color-Adjectives",
+    "color-Adverbs",
+    "color-Pronouns",
+    "color-Determiners",
+    "color-Prepositions",
+    "color-Conjunctions",
+    "color-Interjections",
+    "color-Flex"
+);
 
 // STAR OVERRIDE: never color these
 if (tile.classList.contains("star-tile")) return;
@@ -1146,9 +1162,13 @@ async function classify(word) {
 
 function apply(tile, pos) {
 
-    if (!tile) return;
+if (!tile) return;
 
-    if (tile.classList.contains("star-tile")) return;
+// STAR TILE HARD LOCK
+if (tile.classList.contains("star-tile")) {
+    tile.classList.add("star-tile"); // ensure it stays
+    return;
+}
 
     // normalize just in case API returns weird casing
     pos = (pos || "unknown").toLowerCase().trim();
