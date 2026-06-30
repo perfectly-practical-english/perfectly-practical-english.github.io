@@ -45,9 +45,7 @@ body{
 ========================================================== */
 
 .page{
-
     position:relative;
-
     width:100vw;
     height:100vh;
 
@@ -55,46 +53,41 @@ body{
     grid-template-columns:2fr 1fr;
 
     overflow:hidden;
-
 }
 
-/* ==========================================================
-   LEFT WORD WALL
-========================================================== */
-
+/* CRITICAL FIX */
 #leftPane{
-
-    display:flex;
-    flex-direction:column;
-
-    background:var(--panel);
-
-    border-right:4px solid #888;
-
-    overflow-y:auto;
-    overflow-x:hidden;
-
     min-height:0;
-
 }
-
-/* WORD WALL */
 
 #wordwall{
+    flex:1;
 
     display:grid;
-
     grid-template-columns:repeat(10,1fr);
     grid-auto-rows:26px;
 
     gap:0;
-
     padding:12px;
 
-    width:100%;
-
+    overflow-y:auto;
+    overflow-x:hidden;
 }
+/* SCROLLABLE AREA */
+#wordwall{
+    flex:1;
+    min-height:0;
 
+    display:grid;
+    grid-template-columns:repeat(10,1fr);
+    grid-auto-rows:26px;
+
+    gap:0;
+    padding:12px;
+
+    overflow-y:auto;     /* vertical scroll ONLY */
+    overflow-x:hidden;   /* no horizontal scroll */
+}
 /* ==========================================================
    GRID CELLS
 ========================================================== */
