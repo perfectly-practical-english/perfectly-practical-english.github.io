@@ -84,9 +84,9 @@ body{
     display:grid;
 
     grid-template-columns:repeat(10,1fr);
-    grid-template-rows:repeat(20,26px);
+    grid-template-rows:repeat(18,32px);
 
-    gap:0px;
+    gap:3px;
 
     padding:12px;
 
@@ -141,7 +141,7 @@ body{
 
     font-size:10px;
 
-    line-height:1.15;
+    line-height:1.45;
 
     white-space:pre-wrap;
 
@@ -162,8 +162,8 @@ body{
     justify-content:center;
     align-items:center;
 
-width:100%;
-height:100%;
+width:calc(98% - 4px);    height:68%;
+
     padding:1px 4px;
 
     border:1px solid #666;
@@ -424,9 +424,8 @@ let PNGS = [];
 
 async function loadData(){
 
-const res = await fetch("./W_Wall_U2_Food_Product.txt");
-if (!res.ok) throw new Error("TXT load failed: " + res.status);
-const txt = await res.text();
+    const txt = await fetch("W_Wall_U2_Food_Product.txt")
+        .then(r=>r.text());
 
     const sections={};
     let current="";
@@ -445,12 +444,12 @@ const txt = await res.text();
 
     });
 
-    loadWords(sections["Left Table"] || sections["left table"] || []);
+    loadWords(sections["Left Table"]||[]);
 
-document.getElementById("prompt").textContent =
-    (sections["Top Right Field"] || sections["top right field"] || []).join("\n").trim();
+    document.getElementById("prompt").textContent=
+        (sections["Top Right Field"]||[]).join("\n").trim();
 
-loadImages(sections["Image References"] || sections["image references"] || []);
+loadImages(sections["Image References"]||[]);
 
 buildGrid();
 
@@ -466,33 +465,34 @@ if(window.buildToolbar){
 
 function loadWords(lines){
 
-    WORDS=[];
+    WORDS = [];
 
-    let category="";
+    lines.forEach(line => {
 
-    lines.forEach(line=>{
-
-        line=line.trim();
+        line = line.trim();
 
         if(!line) return;
 
-        if(line.startsWith("|") && line.endsWith("|")){
+        if(line.startsWith("★")) return;
 
-            category=line.slice(1,-1);
+        const parts = line.split("-").map(s => s.trim());
 
-            return;
-        }
+        if(parts.length < 2) return;
 
-        const tile=document.createElement("div");
+        const word = parts[0];
+        const pos = parts[1].toLowerCase();
 
-        tile.className="tile";
+        const tile = document.createElement("div");
 
-        if(category){
-            tile.classList.add("color-"+category);
-        }
+        tile.className = "tile";
 
-tile.textContent = line;
-WORDS.push(tile);
+        tile.textContent = word;
+
+        if(pos === "noun") tile.classList.add("color-Nouns");
+        else if(pos === "verb") tile.classList.add("color-Verbs");
+        else if(pos === "adjective") tile.classList.add("color-Adjectives");
+
+        WORDS.push(tile);
 
     });
 
@@ -545,10 +545,9 @@ for(let i=0;i<ROWS*COLS;i++){
         const cell=document.createElement("div");
         cell.className="cell";
 
-if(WORDS[i]){
-    if (WORDS[i].parentNode) WORDS[i].parentNode.removeChild(WORDS[i]);
-    cell.appendChild(WORDS[i]);
-}
+        if(WORDS[i]){
+            cell.appendChild(WORDS[i]);
+        }
 
         grid.appendChild(cell);
 
@@ -628,26 +627,22 @@ function editTile(tile){
 
 function finishEdit(save){
 
-if(!editingTile) return;
+    if(!editingTile) return;
 
-if(!save){
-    editingTile.textContent = oldText;
-}
+    if(!save){
+        editingTile.textContent=oldText;
+    }
 
-if(editingTile.textContent.trim()===""){
-    editingTile.remove();
-    editingTile = null;
-    return;
-}
+    if(editingTile.textContent.trim()===""){
+        editingTile.remove();
+    }
 
-editingTile.contentEditable = false;
+    editingTile.contentEditable=false;
 
-/* NEW: re-run POS after edit */
-POSModule.run(editingTile);
-
-editingTile = null;
+    editingTile=null;
 
 }
+
 /*----------------------------------------------------------
     Install handlers
 ----------------------------------------------------------*/
@@ -656,7 +651,7 @@ function installTileHandlers(){
 
     allCells().forEach(cell=>{
 
-        if(cell.dataset.ready === "1") return;
+        if(cell.dataset.ready) return;
 
         cell.dataset.ready="1";
 
@@ -698,16 +693,13 @@ function installTileHandlers(){
 
             }
 
-tile = document.createElement("div");
+            tile=document.createElement("div");
 
-tile.className = "tile";
+            tile.className="tile";
 
-cell.appendChild(tile);
+            cell.appendChild(tile);
 
-editTile(tile);
-
-/* NEW: classify immediately (empty or new word) */
-POSModule.run(tile);
+            editTile(tile);
 
         });
 
@@ -720,12 +712,11 @@ POSModule.run(tile);
 ----------------------------------------------------------*/
 
 const observer=new MutationObserver(function(){
-    if (!window._tilesInstalled) {
+
     installTileHandlers();
-    window._tilesInstalled = true;
-}
-    observer.disconnect();
+
 });
+
 observer.observe(document.body,{
 
     childList:true,
@@ -1029,227 +1020,9 @@ window.buildToolbar = buildToolbar;
 })();</script>
 
 <script>
-
-/*==========================================================
-    POS MODULE (API + CACHE + SAFE STANDALONE)
-==========================================================*/
-
-window.POSModule = (function () {
-
-    const CACHE = {};
-
-    // Free Dictionary API (no key required)
-const API_URL = "https://api.datamuse.com/words?sp=";
-
-async function classify(word) {
-
-    word = word.toLowerCase().trim();
-    if (!word) return "unknown";
-
-    if (CACHE[word]) return CACHE[word];
-
-    try {
-
-        // Ask Datamuse for multiple candidate usages
-        const res = await fetch(
-            API_URL + encodeURIComponent(word) + "&md=p"
-        );
-
-        const data = await res.json();
-
-        if (!Array.isArray(data) || data.length === 0) {
-            CACHE[word] = "unknown";
-            return "unknown";
-        }
-
-        // ---------------------------------------
-        // 1. Aggregate POS frequencies
-        // ---------------------------------------
-        const counts = {
-            noun: 0,
-            verb: 0,
-            adjective: 0,
-            adverb: 0
-        };
-
-        for (const item of data) {
-
-            const tags = item?.tags || [];
-
-            if (tags.includes("n")) counts.noun++;
-            if (tags.includes("v")) counts.verb++;
-            if (tags.includes("adj")) counts.adjective++;
-            if (tags.includes("adv")) counts.adverb++;
-
-        }
-
-        // ---------------------------------------
-        // 2. Find strongest category
-        // ---------------------------------------
-        let best = "unknown";
-        let bestScore = 0;
-
-        for (const [key, value] of Object.entries(counts)) {
-            if (value > bestScore) {
-                best = key;
-                bestScore = value;
-            }
-        }
-
-        // ---------------------------------------
-        // 3. FLEX RULE (critical improvement)
-        // ---------------------------------------
-        const total = counts.noun + counts.verb + counts.adjective + counts.adverb;
-
-        const sorted = Object.values(counts).sort((a, b) => b - a);
-
-        const top = sorted[0];
-        const second = sorted[1];
-
-        // if ambiguous OR weak dominance → FLEX
-        const isAmbiguous =
-            total === 0 ||
-            top === 0 ||
-            (top - second <= 1);   // close competition
-
-        const pos = isAmbiguous ? "flex" : best;
-
-        CACHE[word] = pos;
-        return pos;
-
-    } catch (e) {
-        CACHE[word] = "unknown";
-        return "unknown";
-    }
-}function apply(tile, pos) {
-
-    if (!tile) return;
-
-    // normalize just in case API returns weird casing
-    pos = (pos || "unknown").toLowerCase().trim();
-
-    // reset first (prevents stacking issues)
-    tile.className = "tile";
-
-    switch (pos) {
-
-        /* =========================
-           CORE PARTS OF SPEECH
-        ========================== */
-
-        case "noun":
-        case "n":
-            tile.classList.add("color-Nouns");
-            break;
-
-        case "verb":
-        case "v":
-            tile.classList.add("color-Verbs");
-            break;
-
-        case "adjective":
-        case "adj":
-            tile.classList.add("color-Adjectives");
-            break;
-
-        case "adverb":
-        case "adv":
-            tile.classList.add("color-Adverbs");
-            break;
-
-        case "pronoun":
-        case "pro":
-            tile.classList.add("color-Pronouns");
-            break;
-
-        case "determiner":
-        case "article":
-        case "det":
-            tile.classList.add("color-Determiners");
-            break;
-
-        case "preposition":
-        case "prep":
-            tile.classList.add("color-Prepositions");
-            break;
-
-        case "conjunction":
-        case "conj":
-            tile.classList.add("color-Conjunctions");
-            break;
-
-        case "interjection":
-        case "int":
-            tile.classList.add("color-Interjections");
-            break;
-
-        /* =========================
-           NEW: FLEXIBLE / AMBIGUOUS CATEGORY
-           (your “light / fast / round / close” words)
-        ========================== */
-
-        case "flex":
-        case "ambiguous":
-        case "noun-verb-adj":
-        case "nvadj":
-        case "all":
-            tile.classList.add("color-Flex");
-            break;
-
-        /* =========================
-           UNKNOWN
-        ========================== */
-
-        default:
-            // leave neutral white tile
-            break;
-    }
-}
-    async function run(tile) {
-
-        if (!tile) return;
-
-        const word = tile.textContent.trim();
-
-        if (!word) {
-            apply(tile, "unknown");
-            return;
-        }
-
-        const pos = await classify(word);
-
-        apply(tile, pos);
-
-    }
-
-async function colorizeAll() {
-
-    const tiles = [...document.querySelectorAll("#wordwall .tile")];
-
-    await Promise.all(
-        tiles.map(tile => run(tile))
-    );
-
-}
-
-    return {
-        run,
-        classify,
-        apply,
-        colorizeAll,
-        cache: CACHE
-    };
-
-})();
-</script>
-
-<script>
-window.addEventListener("DOMContentLoaded", async function () {
+window.addEventListener("DOMContentLoaded",async function(){
 
     await loadData();
-
-    // Override all colours from the source file.
-    await POSModule.colorizeAll();
 
     installTileHandlers();
 
