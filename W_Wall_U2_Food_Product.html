@@ -378,6 +378,7 @@ height:100%;
 
 .star-tile{
     background:white !important;
+    border:1px solid #666;
 }
 
 </style>
@@ -488,20 +489,22 @@ function loadWords(lines){
             return;
         }
 
-        const tile=document.createElement("div");
+const tile=document.createElement("div");
 
-        tile.className="tile";
-
-        if(category){
-            tile.classList.add("color-"+category);
-        }
+tile.className="tile";
 
 const isStar = line.startsWith("*");
 
-tile.textContent = isStar ? line.replace(/^\*\s*/, "") : line;
+// strip star
+const clean = isStar ? line.replace(/^\*\s*/, "") : line;
 
+tile.textContent = clean;
+
+// STAR = force white tile only
 if (isStar) {
     tile.classList.add("star-tile");
+} else if (category) {
+    tile.classList.add("color-" + category);
 }
 
 WORDS.push(tile);
@@ -1144,6 +1147,8 @@ async function classify(word) {
 function apply(tile, pos) {
 
     if (!tile) return;
+
+    if (tile.classList.contains("star-tile")) return;
 
     // normalize just in case API returns weird casing
     pos = (pos || "unknown").toLowerCase().trim();
