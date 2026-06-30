@@ -83,8 +83,8 @@ body{
 
     display:grid;
 
-    grid-template-columns:repeat(10,1fr);
-    grid-template-rows:repeat(20,26px);
+grid-template-columns: repeat(10, 1fr);
+grid-template-rows: repeat(30, 26px);
 
     gap:0px;
 
@@ -137,7 +137,7 @@ body{
 
 #prompt{
 
-    padding:24px;
+    padding:10px;
 
     font-size:10px;
 
@@ -598,8 +598,11 @@ function buildGrid(){
 
     grid.innerHTML="";
 
-const ROWS = 20;
+const ROWS = 30;   // Change this whenever you want more/fewer rows
 const COLS = 10;
+
+let WORDS = [];
+let PNGS = [];
 
 for(let i=0;i<ROWS*COLS;i++){
         const cell=document.createElement("div");
